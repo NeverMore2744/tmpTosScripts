@@ -1,3 +1,4 @@
 bin/
 result/
 analyze_tmp.sh
+*.swp
