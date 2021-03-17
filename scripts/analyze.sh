@@ -10,7 +10,7 @@ analyze_multiple_files() {
   params=()
 
   if [[ $# -gt 4 ]]; then
-    params=("${[@:5]}");
+    params=("${@:5}");
     echo "$params[@]"
   fi
 
@@ -86,4 +86,10 @@ echo ""
 
 echo "5. analyze randomness of three traces ..";
 analyze_multiple_files "_rand" "_rand" "src/analyze_randomness.cc" "randomness" 32 32 
+merge "" "_rand/" "_rand.data"
+echo ""
+
+echo "6. analyze request sizes of three traces ..";
+analyze_multiple_files "_reqsz" "_reqsz" "src/analyze_request_size_sector.cc" "request sizes" 
+echo ""
 

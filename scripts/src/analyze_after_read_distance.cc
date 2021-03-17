@@ -53,7 +53,7 @@ public:
   // initialize properties
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
-    trace.loadProperty(propertyFileName);
+    trace.loadProperty(propertyFileName, volume);
 
     uint64_t maxLba = trace.getMaxLba(volumeId);
     nBlocks_ = maxLba + 1;
@@ -88,7 +88,7 @@ public:
       bool first = true;
       uint64_t cnt = 0, lastReqTimestamp;
       timeval tv1, tv2;
-      gettimeofday(&tv1, NULL);
+      trace.myTimer(true, "RAR and WAR");
 
       while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
         if (first) {
@@ -123,11 +123,7 @@ public:
           }
         }
 
-        cnt++;
-        if (cnt % 1000000 == 0) {
-          gettimeofday(&tv2, NULL);
-          std::cerr << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
-        }
+        trace.myTimer(false, "RAR and WAR");
       }
 
       std::cerr << "Output: rar time" << std::endl;

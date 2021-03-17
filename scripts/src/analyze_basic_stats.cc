@@ -24,7 +24,7 @@ public:
 
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
-    trace.loadProperty(propertyFileName);
+    trace.loadProperty(propertyFileName, volume);
     writeFreq_ = new LargeArray<uint64_t>(trace.getMaxLba(volumeId) + 1);
     readFreq_ = new LargeArray<uint64_t>(trace.getMaxLba(volumeId) + 1);
   }

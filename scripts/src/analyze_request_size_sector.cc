@@ -34,11 +34,10 @@ public:
     }
     std::istream is(&fb);
 
-    timeval tv1, tv2;
-    gettimeofday(&tv1, NULL);
-
     char line2[200];
     uint64_t cnt = 0;
+    
+    trace.myTimer(true, "request sizes");
 
     while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2, true)) {
       if (isWrite == 'R') { // read request
@@ -46,13 +45,7 @@ public:
       } else if (isWrite == 'W') { // write request
         reqSize_[length].second += 1;
       }
-
-      cnt++;
-      if (cnt % 1000000 == 0) {
-        gettimeofday(&tv2, NULL);
-        std::cerr << "Volume " << volume << ": " 
-          << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
-      }
+      trace.myTimer(false, "request sizes");
     }
 
     std::cout << reqSize_.size() << std::endl;

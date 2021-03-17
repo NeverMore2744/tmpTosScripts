@@ -1,21 +1,43 @@
 #include<fstream>
 #include<iostream>
+#include<chrono>
 #include<sys/time.h>
+#include<utility>
+
+typedef std::chrono::high_resolution_clock Clock;
+typedef std::chrono::milliseconds milliseconds;
 
 class Trace {
   std::unordered_map<std::string, std::pair<uint64_t, uint64_t>> properties;
-  std::string line;
+  std::string line_, volumeId_;
 
   public:
-  void loadProperty(char *propertyFile) {
+  void loadProperty(char *propertyFile, const char* selectedVolume) {
     FILE *f = fopen(propertyFile, "r");
     uint64_t uniqueLba, maxLba;
     std::string volumeId;
+    volumeId_ = std::string(selectedVolume);
     char tmp[300];
 
     while (fscanf(f, "%s %lu %lu", tmp, &uniqueLba, &maxLba) != EOF) {
       volumeId = std::string(tmp);
       properties[volumeId] = std::make_pair(uniqueLba, maxLba);
+    }
+  }
+
+  void myTimer(bool start, const char* event = "") {
+    static Clock::time_point ts;
+    static uint64_t cnt = 0;
+    if (start) {
+      ts = Clock::now();
+      cnt = 0;
+    } else {
+      if (++cnt % 1000000 == 0) {
+        Clock::time_point te = Clock::now();
+        double duration2 = (std::chrono::duration_cast <std::chrono::milliseconds> (te - ts)).count() / 1024.0;
+        fprintf(stderr, "Volume %s analysis on %s: %lu requests, %lf seconds\n", 
+            volumeId_.c_str(), event, cnt, duration2);
+      }
     }
   }
 
@@ -50,10 +72,10 @@ class Trace {
   // offset and length: in 4KiB ("sector" enabled: 512B)
   int readNextRequestFstream(std::istream& is, uint64_t &timestamp, bool &isWrite, uint64_t &offset, uint64_t &length, char* line_cstr, bool sector = false) {
     char type;
-    if (!std::getline(is, line)) {
+    if (!std::getline(is, line_)) {
       return 0;
     }
-    strcpy(line_cstr, line.c_str());
+    strcpy(line_cstr, line_.c_str());
 
 #ifdef TENCENTCLOUD
     uint64_t beginTimestampInSec = 1538326799llu; // Minimum timestamp in Tencent 

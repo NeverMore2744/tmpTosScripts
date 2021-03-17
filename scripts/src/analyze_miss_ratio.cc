@@ -14,11 +14,9 @@
 #include "large_array.h"
 #include "trace.h"
 
-#define INTV_TO_MINUTE 600000000
-#define MAX_MINUTE (7 * 24 * 60)
-
 class Analyzer {
   Trace trace;
+  std::string volumeId_;
 
   struct Cache {
     Cache(uint64_t capacity, double ratio) {
@@ -60,8 +58,7 @@ class Analyzer {
   uint64_t workingSetSize_ = -1ull;
 
   void initCaches(std::string deviceId) {
-//    caches.emplace_back(workingSetSize_, 1.0);
-    std::cout << caches.size() << std::endl;
+    std::cerr << caches.size() << std::endl;
   }
 
 public:
@@ -69,21 +66,21 @@ public:
   // initialize properties
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
-    trace.loadProperty(propertyFileName);
+    volumeId_ = volumeId;
+    trace.loadProperty(propertyFileName, volume);
 
     workingSetSize_ = trace.getUniqueLba(volumeId);
     caches.emplace_back(workingSetSize_ * 0.01, 0.01);
     caches.emplace_back(workingSetSize_ * 0.1, 0.1);
   }
 
-  void analyze(char *inputTrace, uint64_t uniqueLba4k)
+  void analyze(char *inputTrace)
   {
-      workingSetSize_ = uniqueLba4k;
       caches.emplace_back(workingSetSize_ * 0.01, 0.01);
       caches.emplace_back(workingSetSize_ * 0.1, 0.1);
 
       uint64_t offset, length, timestamp;
-      char type;
+      bool isWrite;
       uint64_t numReadBlocks = 0, numWriteBlocks = 0;
       uint64_t numReqs = 0;
       uint64_t timeCalculated;
@@ -98,45 +95,33 @@ public:
 
       char line2[200];
       uint64_t cnt = 0;
-      timeval tv1, tv2;
-      gettimeofday(&tv1, NULL);
+      trace.myTimer(true, "miss ratio");
 
-      while (trace.readNextRequestFstream(is, timestamp, type, offset, length, line2)) {
+      while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
         for (uint64_t i = 0; i < length; i += 1) {
-          if (type == 'R') {
+          if (!isWrite) {
             numReadBlocks += 1;
           } else {
             numWriteBlocks += 1;
           }
           uint64_t addr = offset + i;
           for (Cache &cache : caches) {
-            cache.update(addr, (type == 'R'));
+            cache.update(addr, !isWrite);
           }
         }
 
-        cnt++;
-        if (cnt % 100000 == 0) {
-          gettimeofday(&tv2, NULL);
-          std::cerr << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
-        }
+        trace.myTimer(false, "miss ratio");
       }
 
-      std::cout << numReadBlocks << " " << numWriteBlocks << std::endl;
       for (Cache &cache : caches) {
-        std::cout << cache.ratio_ << " " << cache.numReadHits_ << " " << cache.numWriteHits_ << std::endl;
+        std::cout << volumeId_ << " " << numReadBlocks << " " << numWriteBlocks << " "  
+          << cache.ratio_ << " " << cache.numReadHits_ << " " << cache.numWriteHits_ << std::endl;
       }
   }
 };
 
 int main(int argc, char *argv[]) {
-  uint64_t maxLba;
-  if (argc < 3) {
-    std::cerr << "Input error" << std::endl;
-    return 1;
-  }
-  sscanf(argv[2], "%llu", &maxLba);
-
   Analyzer analyzer;
-//  analyzer.init(argv[3], argv[1]);
-  analyzer.analyze(argv[1], maxLba);
+  analyzer.init(argv[3], argv[1]);
+  analyzer.analyze(argv[2]);
 }

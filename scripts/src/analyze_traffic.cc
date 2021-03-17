@@ -20,7 +20,7 @@ class Analyzer {
   LargeArray<uint64_t> *readTraffic_;
   LargeArray<uint64_t> *writeTraffic_;
   LargeArray<uint64_t> *updateTraffic_;
-  uint64_t maxLba;
+  uint64_t maxLba_;
 
 public:
   Analyzer() {
@@ -33,8 +33,8 @@ public:
 
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
-    trace.loadProperty(propertyFileName);
-    maxLba = trace.getMaxLba(volumeId);
+    trace.loadProperty(propertyFileName, volume);
+    maxLba_ = trace.getMaxLba(volumeId);
   }
 
   void analyze(char *inputTrace)
@@ -54,10 +54,9 @@ public:
     std::istream is(&fb);
 
     char line2[200];
-    timeval tv1, tv2;
-    gettimeofday(&tv1, NULL);
+    trace.myTimer(true, "traffic");
 
-    int size_array = trace.getMaxLba(; // 1024 * 1024 * 4;
+    int size_array = maxLba_ * 8; 
     uint64_t* wwss = new uint64_t[size_array];
     memset(wwss, 0, sizeof(uint64_t) * size_array);
 
@@ -84,11 +83,7 @@ public:
         readReqs_->inc(timeInMin);
       }
 
-      cnt++;
-      if (cnt % 100000 == 0) {
-        gettimeofday(&tv2, NULL);
-        std::cerr << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
-      }
+      trace.myTimer(false, "traffic");
     }
 
     readReqs_->outputNonZero();

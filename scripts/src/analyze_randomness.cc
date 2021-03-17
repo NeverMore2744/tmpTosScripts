@@ -36,7 +36,7 @@ public:
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
     volumeId_ = volumeId;
-    trace.loadProperty(propertyFileName);
+    trace.loadProperty(propertyFileName, volume);
 
     uint64_t maxLba = trace.getMaxLba(volumeId);
     nBlocks_ = maxLba + 1;
@@ -88,11 +88,12 @@ public:
         cnt++;
         if (cnt % 1000000 == 0) {
           gettimeofday(&tv2, NULL);
-          std::cerr << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
+          std::cerr << "Volume " << volumeId_ << ": " 
+            << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
         }
       }
     }
-    std::cout << inputTrace << " " << recentRequestNumber << " " << windowSize << " " << ansRandom << " " << ansAll << " " << std::endl;
+    std::cout << volumeId_ << " " << recentRequestNumber << " " << windowSize << " " << ansRandom << " " << ansAll << " " << std::endl;
   }
 };
 

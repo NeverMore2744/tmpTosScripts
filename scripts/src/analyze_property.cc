@@ -11,7 +11,6 @@
 #include "trace.h"
 
 class Analyzer {
-
   Trace trace;
 
   // LBA to number of reads and number of writes
@@ -34,19 +33,15 @@ public:
 
     char line2[200];
     uint64_t cnt = 0;
-    timeval tv1, tv2;
-    gettimeofday(&tv1, NULL);
-
-    std::cerr << "Volume: " << volumeId << std::endl;
+    trace.myTimer(true, "property");
 
     while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
       maxLba = std::max(maxLba, offset + length);
       for (uint64_t i = 0; i < length; i += 1) {
         lbas_.insert(offset + i);
       }
-      if (++cnt % 10000000 == 0) {std::cerr << "request " << cnt << std::endl;}
+      trace.myTimer(false, "property");
     }
-
     std::cout << volumeId << " " << lbas_.size() << " " << maxLba << std::endl;
   }
 };

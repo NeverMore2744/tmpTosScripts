@@ -44,7 +44,7 @@ public:
   // initialize properties
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
-    trace.loadProperty(propertyFileName);
+    trace.loadProperty(propertyFileName, volume);
 
     uint64_t maxLba = trace.getMaxLba(volumeId);
     nBlocks_ = maxLba + 1;
