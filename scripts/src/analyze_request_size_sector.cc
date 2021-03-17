@@ -17,17 +17,14 @@
 
 class Analyzer {
   Trace trace;
-
   std::map<uint64_t, std::pair<uint64_t, uint64_t>> reqSize_;
-  uint64_t beginTimestampInMin_ = 12816637200llu / 60; // Minimum timestamp in MSR 
 
 public:
 
-  void analyze(char *inputTrace)
+  void analyze(const char *inputTrace, const char* volume)
   {
     uint64_t offset, length, timestamp;
-    char type;
-    uint64_t timeCalculated;
+    bool isWrite;
 
     std::string line;
     std::filebuf fb;
@@ -43,28 +40,30 @@ public:
     char line2[200];
     uint64_t cnt = 0;
 
-    while (trace.readNextRequestFstream(is, timestamp, type, offset, length, line2, true)) {
-      if (type == 'R') { // read request
+    while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2, true)) {
+      if (isWrite == 'R') { // read request
         reqSize_[length].first += 1;
-      } else if (type == 'W') { // write request
+      } else if (isWrite == 'W') { // write request
         reqSize_[length].second += 1;
       }
 
       cnt++;
-      if (cnt % 100000 == 0) {
+      if (cnt % 1000000 == 0) {
         gettimeofday(&tv2, NULL);
-        std::cerr << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
+        std::cerr << "Volume " << volume << ": " 
+          << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
       }
     }
 
     std::cout << reqSize_.size() << std::endl;
     for (auto pr : reqSize_) {
-      std::cout << pr.first * 512 << " " << pr.second.first << " " << pr.second.second << std::endl;
+      std::cout << volume << " " << pr.first * 512 
+        << " " << pr.second.first << " " << pr.second.second << std::endl;
     }
   }
 };
 
 int main(int argc, char *argv[]) {
   Analyzer analyzer;
-  analyzer.analyze(argv[1]);
+  analyzer.analyze(argv[2], argv[1]);
 }

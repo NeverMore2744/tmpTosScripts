@@ -15,6 +15,7 @@
 
 class Analyzer {
   Trace trace;
+  char volume_cstr[100];
 
   LargeArray<uint64_t>* indexMap_;
   LargeArray<uint64_t>* lastTimestamp_;
@@ -43,6 +44,7 @@ public:
   // initialize properties
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
+    strcpy(volume_cstr, volume);
     trace.loadProperty(propertyFileName);
 
     uint64_t maxLba = trace.getMaxLba(volumeId);
@@ -52,7 +54,7 @@ public:
     indexMap_ = new LargeArray<uint64_t>(nBlocks_);
     lastTimestamp_ = new LargeArray<uint64_t>(nBlocks_);
     // every 256 blocks in one bucket, in total maintain (maxLba / 4096 + 1) * 8
-    intervalHistogramByTime_ = new LargeArray<uint64_t>(9 * 24 * 60);
+    intervalHistogramByTime_ = new LargeArray<uint64_t>(31 * 24 * 60);
     intervalHistogramByDataAmount_ = new LargeArray<uint64_t>(nBlocks_ * 8 / 256 + 1);
   }
 
@@ -103,7 +105,8 @@ public:
         cnt++;
         if (cnt % 1000000 == 0) {
           gettimeofday(&tv2, NULL);
-          std::cerr << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
+          std::cerr << "Volume " << volume_cstr << ": " 
+            << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
         }
       }
 

@@ -103,8 +103,8 @@ int main(int argc, char *argv[]) {
       << std::endl;
     return 1;
   }
-  sscanf(argv[4], "%llu", &recentRequestNumber);
-  sscanf(argv[5], "%llu", &windowSize);
+  sscanf(argv[4], "%lu", &recentRequestNumber);
+  sscanf(argv[5], "%lu", &windowSize);
 
   Analyzer analyzer;
   analyzer.init(argv[3], argv[1]);
