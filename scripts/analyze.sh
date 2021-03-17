@@ -2,46 +2,17 @@
 
 source common.sh
 
-analyze_one_line() {
-  bin_suffix=$1;
-  output_suffix=$2;
-  src=$3;
-  disp=$4;
-
-  for ((K=0; K<${#define_names[@]}; K++)); do
-    bin="bin/${trace_prefix[$K]}${bin_suffix}"
-    output="result/${trace_prefix[$K]}${output_suffix}"
-    property_file="result/${trace_prefix[$K]}_property"
-    echo "Analyzing ${display_names[$K]} on $disp ... output at $output"
-
-    g++ $src -o $bin -std=c++11 -D${define_names[$K]}
-    if [[ $? -ne 0 ]]; then 
-      echo "Compile failed"
-      exit
-    fi
-
-# Check whether the analysis has been finished
-    numVols=`wc -l < ${trace_file_paths[$K]}`
-    numAnalyzed=`wc -l < $output`
-
-    if [[ $numVols -eq $numAnalyzed ]]; then
-      echo "Analyzed ${display_names[$K]}. skip to the next one"
-      continue
-    fi
-
-    rm -f $output
-    cat ${trace_file_paths[$K]} | while read line; do
-      trace_file=${trace_paths[$K]}/$line.csv
-      $bin $line $trace_file $property_file >> $output
-    done
-  done
-}
-
 analyze_multiple_files() {
   bin_suffix=$1;
   output_suffix=$2;
   src=$3;
   disp=$4;
+  params=()
+
+  if [[ $# -gt 4 ]]; then
+    params=("${[@:5]}");
+    echo "$params[@]"
+  fi
 
   for ((K=0; K<${#define_names[@]}; K++)); do
     bin="bin/${trace_prefix[$K]}${bin_suffix}"
@@ -64,7 +35,7 @@ analyze_multiple_files() {
       output=${output_dir}/$line.data
       sz=`ls -s ${output} 2>/dev/null | awk '{print $1;}'`
       if [[ $? -ne 0 || $sz -eq 0 ]]; then  # Not exist, or empty file
-        $bin $line $trace_file $property_file >> $output
+        $bin $line $trace_file $property_file ${params[@]} >> $output
       else
         echo "Volume $line in ${display_names[$K]} is analyzed before, skip"
       fi
@@ -72,11 +43,42 @@ analyze_multiple_files() {
   done
 }
 
+merge() {
+  input_prefix=$1
+  input_suffix=$2;
+  output_suffix=$3;
+  
+  for ((K=0; K<${#define_names[@]}; K++)); do
+    output="result/${trace_prefix[$K]}${output_suffix}"
+    rm -f $output
+    
+    cat ${trace_file_paths[$K]} | while read line; do
+      input="result/${input_prefix}${trace_prefix[$K]}${input_suffix}${line}.data"
+      if [[ ! -f $input ]]; then
+        echo "Error: input $input not exist"
+        return 1
+      fi
+      cat $input >> $output
+    done
+  done
+}
+
 echo "0. analyze the properties of three traces .. ";
-analyze_one_line "_property" "_property" "src/analyze_property.cc" "properties"
+analyze_multiple_files "_property" "_property" "src/analyze_property.cc" "properties"
+merge "" "_property/" "_property.data" 
 
 echo "1. analyze basic statistics of three traces ..";
 analyze_multiple_files "_bs" "_bs" "src/analyze_basic_stats.cc" "basic statistics"
 
-echo "2. analyze read distances of three traces ..";
-analyze_multiple_files "_bs" "_bs" "src/analyze_basic_stats.cc" "basic statistics"
+echo "2. analyze read distances (RAR and WAR) of three traces ..";
+analyze_multiple_files "_ar" "_ar" "src/analyze_after_read_distance.cc" "RAR and WAR"
+
+echo "3. analyze write distances (RAW and WAW) of three traces ..";
+analyze_multiple_files "_aw" "_aw" "src/analyze_after_write_distance.cc" "RAW and WAW" 
+
+echo "4. analyze update distances of three traces ..";
+analyze_multiple_files "_aw" "_aw" "src/analyze_after_write_distance.cc" "RAW and WAW" 
+
+echo "4. analyze randomness of three traces ..";
+analyze_multiple_files "_rand" "_rand" "src/analyze_randomness.cc" "randomness" 
+

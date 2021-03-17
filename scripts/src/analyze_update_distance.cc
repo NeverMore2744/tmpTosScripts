@@ -13,8 +13,6 @@
 
 #include <cassert>
 
-#define INTV (1000000000ll * 60)
-
 class Analyzer {
   Trace trace;
 
@@ -24,10 +22,8 @@ class Analyzer {
   LargeArray<uint64_t>* intervalHistogramByTime_;
   LargeArray<uint64_t>* intervalHistogramByDataAmount_;
 
-  uint64_t startTimestamp_ = 0;
   uint64_t nBlocks_ = -1ull;
   uint64_t currentId_ = 1;
-  uint64_t beginTimestampInMin_ = 12816637200llu / 60; // Minimum timestamp in MSR 
 
   uint64_t getDistance(uint64_t off) {
     uint64_t distance = currentId_ - indexMap_->get(off);
@@ -36,9 +32,9 @@ class Analyzer {
     return distance;
   }
 
-  uint64_t getTime(uint64_t off, uint64_t timestamp) {
+  uint64_t getTimeInMin(uint64_t off, uint64_t timestamp) {
     uint64_t diff = timestamp - lastTimestamp_->get(off);
-    diff /= INTV;
+    diff /= 10000000 * 60;
     return diff;
   }
 
@@ -62,15 +58,7 @@ public:
 
   void analyze(char *inputTrace) {
       uint64_t offset, length, timestamp;
-      char type;
-//      nBlocks_ = (inputMaxLba + 8) / 8;
-//
-//      {
-//        indexMap_ = new LargeArray<uint64_t>(nBlocks_);
-//        lastTimestamp_ = new LargeArray<uint64_t>(nBlocks_);
-//        intervalHistogramByTime_ = new LargeArray<uint64_t>(9 * 24 * 60);
-//        intervalHistogramByDataAmount_ = new LargeArray<uint64_t>(nBlocks_ * 8 / 256 + 1);
-//      }
+      bool isWrite;
 
       std::string line;
       std::filebuf fb;
@@ -88,7 +76,7 @@ public:
       bool first = true;
       uint64_t lastReqTimestamp;
 
-      while (trace.readNextRequestFstream(is, timestamp, type, offset, length, line2)) {
+      while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
         if (first) {
           first = false;
         } else if (timestamp < lastReqTimestamp) {
@@ -96,15 +84,15 @@ public:
         }
         lastReqTimestamp = timestamp;
 
-        if (type == 'W') { // write request
+        if (isWrite) { // write request
           for (uint64_t i = 0; i < length; i += 1) {
             if (indexMap_->get(offset + i) != 0) {
               intervalHistogramByDataAmount_->inc(getDistance(offset + i));
 
-              if (getTime(offset + i, timestamp) >= intervalHistogramByTime_->getSize()) {
+              if (getTimeInMin(offset + i, timestamp) >= intervalHistogramByTime_->getSize()) {
                 intervalHistogramByTime_->inc(intervalHistogramByTime_->getSize() - 1);
               }
-              intervalHistogramByTime_->inc(getTime(offset + i, timestamp));
+              intervalHistogramByTime_->inc(getTimeInMin(offset + i, timestamp));
             }
 
             lastTimestamp_->put(offset + i, timestamp);
@@ -125,14 +113,7 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-//  uint64_t maxLba;
-//  if (argc < 3) {
-//    std::cerr << "Input error" << std::endl;
-//    return 1;
-//  }
-//  sscanf(argv[2], "%llu", &maxLba);
-
   Analyzer analyzer;
-  analyzer.init(argv[3], argv[2]);
-  analyzer.analyze(argv[1]);
+  analyzer.init(argv[3], argv[1]);
+  analyzer.analyze(argv[2]);
 }

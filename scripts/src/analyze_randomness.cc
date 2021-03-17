@@ -18,10 +18,7 @@
 class Analyzer {
   Trace trace;
 
-//  LargeArray<uint64_t>* travelDistanceHistogram_;
-
   std::string volumeId_;
-
   uint64_t startTimestamp_;
   uint64_t nBlocks_ = -1ull;
   uint64_t currentId_ = 0;
@@ -43,14 +40,12 @@ public:
 
     uint64_t maxLba = trace.getMaxLba(volumeId);
     nBlocks_ = maxLba + 1;
-
-//    travelDistanceHistogram_ = new LargeArray<uint64_t>(nBlocks_ / 2 / spaceThresholdInBlocks_);
   }
 
   void analyze(char *inputTrace, uint64_t recentRequestNumber, uint64_t windowSize)
   {
     uint64_t offset, length, timestamp;
-    char type;
+    bool isWrite;
     std::vector<uint64_t> nextLbas;
     int nextPtr = 0;
 
@@ -71,7 +66,7 @@ public:
 
     uint64_t ansRandom = 0, ansAll = 0;
 
-    while (trace.readNextRequestFstream(is, timestamp, type, offset, length, line2)) {
+    while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
       uint64_t minDis = nBlocks_, dis;
 
       if (nextLbas.size() < recentRequestNumber) {
@@ -91,7 +86,7 @@ public:
         nextPtr = (nextPtr + 1) % recentRequestNumber;
 
         cnt++;
-        if (cnt % 100000 == 0) {
+        if (cnt % 1000000 == 0) {
           gettimeofday(&tv2, NULL);
           std::cerr << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
         }
@@ -102,20 +97,16 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-//  if (argc < 5) {
-//    printf("Usage: %s <volume> <trace_file> <property_file> <num_request>\n", argv[0]);
-//    exit(1);
-//  }
-
   uint64_t recentRequestNumber, windowSize;
-  if (argc < 4) {
-    std::cerr << "Input error: <file name> <recentRequestNumber> <windowSize>" << std::endl;
+  if (argc < 5) {
+    std::cerr << "Input error: <volume> <trace file> <property> <recentRequestNumber> <windowSize>" 
+      << std::endl;
     return 1;
   }
-  sscanf(argv[2], "%llu", &recentRequestNumber);
-  sscanf(argv[3], "%llu", &windowSize);
+  sscanf(argv[4], "%llu", &recentRequestNumber);
+  sscanf(argv[5], "%llu", &windowSize);
 
   Analyzer analyzer;
-//  analyzer.init(argv[3], argv[1]);
-  analyzer.analyze(argv[1], recentRequestNumber, windowSize);
+  analyzer.init(argv[3], argv[1]);
+  analyzer.analyze(argv[2], recentRequestNumber, windowSize);
 }
