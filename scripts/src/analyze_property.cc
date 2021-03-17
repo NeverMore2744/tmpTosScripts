@@ -18,6 +18,12 @@ class Analyzer {
   uint64_t maxLba = 0;
 
 public:
+  void init(char *volume) {
+    std::string volumeId(volume);
+    volumeId_ = volumeId;
+    trace.loadProperty(nullptr, volume);
+  }
+
   void analyze(char *inputTrace, char *volumeId)
   {
     uint64_t offset, length, timestamp;
@@ -48,5 +54,6 @@ public:
 
 int main(int argc, char *argv[]) {
   Analyzer analyzer;
+  analyzer.init(argv[1]);
   analyzer.analyze(argv[2], argv[1]);
 }

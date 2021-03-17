@@ -13,15 +13,18 @@ class Trace {
 
   public:
   void loadProperty(char *propertyFile, const char* selectedVolume) {
-    FILE *f = fopen(propertyFile, "r");
+    FILE *f = nullptr; 
     uint64_t uniqueLba, maxLba;
     std::string volumeId;
     volumeId_ = std::string(selectedVolume);
-    char tmp[300];
 
-    while (fscanf(f, "%s %lu %lu", tmp, &uniqueLba, &maxLba) != EOF) {
-      volumeId = std::string(tmp);
-      properties[volumeId] = std::make_pair(uniqueLba, maxLba);
+    if (propertyFile != nullptr) {
+      f = fopen(propertyFile, "r");
+      char tmp[300];
+      while (fscanf(f, "%s %lu %lu", tmp, &uniqueLba, &maxLba) != EOF) {
+        volumeId = std::string(tmp);
+        properties[volumeId] = std::make_pair(uniqueLba, maxLba);
+      }
     }
   }
 
