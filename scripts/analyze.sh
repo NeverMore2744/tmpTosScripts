@@ -93,3 +93,8 @@ echo "6. analyze request sizes of three traces ..";
 analyze_multiple_files "_reqsz" "_reqsz" "src/analyze_request_size_sector.cc" "request sizes" 
 echo ""
 
+echo "7. analyze inter-arrival time of three traces ..."
+analyze_multiple_files "_int" "_int" "src/analyze_interarrival_time.cc" "interarrival time" 
+echo ""
+
+

@@ -1,21 +1,7 @@
-#include <iostream>
-#include <unordered_map>
-#include <string>
-#include <cstdint>
-#include <map>
-#include <cstdio>
-#include <vector>
-#include <set>
-#include <algorithm>
 #include "large_array.h"
-#include "trace.h"
-#include <sys/time.h>
+#include "trace_.h"
 
-#define INTV_TO_MINUTE 600000000  
-#define MAX_MINUTE (7 * 24 * 60)
-
-class Analyzer {
-  Trace trace;
+class Analyzer : Analyzer_base {
   LargeArray<uint64_t>** intervalHistograms_;
 
   // diff is in 1e-7 seconds
@@ -40,6 +26,11 @@ class Analyzer {
   }
 
 public:
+  // initialize properties
+  void init(char *propertyFileName, char *volume) {
+    trace_.loadProperty(propertyFileName, volume);
+  }
+
   void analyze(char* inputTrace) {
       intervalHistograms_ = new LargeArray<uint64_t>*[6];
       intervalHistograms_[0] = new LargeArray<uint64_t>(1 * 1000000); // 0-0.1s, by 10^-7
@@ -51,22 +42,11 @@ public:
 
       uint64_t offset, length, timestamp;
       uint64_t prevTimestamp = -1ull;
-      uint64_t timeCalculated;
       bool isWrite;
+      openTrace(inputTrace);
+      trace_.myTimer(true, "interarrival time");
 
-      std::string line;
-      std::filebuf fb;
-      if (!fb.open(inputTrace, std::ios::in)) {
-        std::cout << "Input file error: " << inputTrace << std::endl;
-        exit(1);
-      }
-      std::istream is(&fb);
-
-      char line2[200];
-      uint64_t cnt = 0;
-      trace.myTimer(true, "interarrival time");
-
-      while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
+      while (trace_.readNextRequestFstream(*is_, timestamp, isWrite, offset, length, line2_)) {
         if (prevTimestamp != -1ull) {
           if (timestamp < prevTimestamp) {
             continue;
@@ -77,7 +57,7 @@ public:
           prevTimestamp = timestamp;
         }
 
-        trace.myTimer(false, "interarrival time");
+        trace_.myTimer(false, "interarrival time");
       }
 
       for (int i = 0; i < 6; ++i) {

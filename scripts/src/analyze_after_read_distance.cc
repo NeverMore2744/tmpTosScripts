@@ -12,9 +12,7 @@
 #include <string>
 #include <sys/time.h>
 
-class Analyzer {
-  Trace trace;
-
+class Analyzer : Analyzer_base {
   LargeArray<uint64_t>* indexMap_;
   LargeArray<uint64_t>* lastTimestamp_;
   LargeArray<char>* lastState_;
@@ -28,8 +26,6 @@ class Analyzer {
 //    LargeArray<uint64_t>* intervalHistogramByDataAmount_;
   } rar_;
 
-  uint64_t startTimestamp_ = 0;
-  uint64_t nBlocks_ = -1ull;
   uint64_t currentId_ = 0;
 
   uint64_t getDistance(uint64_t off) {
@@ -53,11 +49,11 @@ public:
   // initialize properties
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
-    trace.loadProperty(propertyFileName, volume);
+    trace_.loadProperty(propertyFileName, volume);
 
-    uint64_t maxLba = trace.getMaxLba(volumeId);
+    uint64_t maxLba = trace_.getMaxLba(volumeId);
     nBlocks_ = maxLba + 1;
-    std::cout << nBlocks_ << std::endl;
+    std::cerr << nBlocks_ << std::endl;
 
     indexMap_ = new LargeArray<uint64_t>(nBlocks_);
     lastTimestamp_ = new LargeArray<uint64_t>(nBlocks_);
@@ -75,22 +71,13 @@ public:
   void analyze(char *inputTrace) {
       uint64_t offset, length, timestamp;
       bool isWrite;
+      openTrace(inputTrace);
 
-      std::string line;
-      std::filebuf fb;
-      if (!fb.open(inputTrace, std::ios::in)) {
-        std::cout << "Input file error: " << inputTrace << std::endl;
-        exit(1);
-      }
-      std::istream is(&fb);
-
-      char line2[200];
       bool first = true;
-      uint64_t cnt = 0, lastReqTimestamp;
-      timeval tv1, tv2;
-      trace.myTimer(true, "RAR and WAR");
+      uint64_t lastReqTimestamp;
+      trace_.myTimer(true, "RAR and WAR");
 
-      while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
+      while (trace_.readNextRequestFstream(*is_, timestamp, isWrite, offset, length, line2_)) {
         if (first) {
           first = false;
         } else if (timestamp < lastReqTimestamp) {
@@ -123,7 +110,7 @@ public:
           }
         }
 
-        trace.myTimer(false, "RAR and WAR");
+        trace_.myTimer(false, "RAR and WAR");
       }
 
       std::cerr << "Output: rar time" << std::endl;

@@ -1,6 +1,6 @@
 #include <cstring>
-
-#define SELECT_7D false 
+#include <cinttypes>
+#include <iostream>
 
 template<class T>
 class LargeArray {

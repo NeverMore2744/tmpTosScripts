@@ -1,23 +1,7 @@
-#include <iostream>
-#include <unordered_map>
-#include <string>
-#include <cstdint>
-#include <map>
-#include <unordered_map>
-#include <cstdio>
-#include <vector>
-#include <list>
-#include <set>
-#include <algorithm>
-#include <string>
-#include <sys/time.h>
 #include "large_array.h"
 #include "trace.h"
 
-class Analyzer {
-  Trace trace;
-  std::string volumeId_;
-
+class Analyzer : Analyzer_base {
   struct Cache {
     Cache(uint64_t capacity, double ratio) {
       if (capacity == 0) capacity = 1;
@@ -67,9 +51,9 @@ public:
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
     volumeId_ = volumeId;
-    trace.loadProperty(propertyFileName, volume);
+    trace_.loadProperty(propertyFileName, volume);
 
-    workingSetSize_ = trace.getUniqueLba(volumeId);
+    workingSetSize_ = trace_.getUniqueLba(volumeId);
     caches.emplace_back(workingSetSize_ * 0.01, 0.01);
     caches.emplace_back(workingSetSize_ * 0.1, 0.1);
   }
@@ -83,21 +67,11 @@ public:
       bool isWrite;
       uint64_t numReadBlocks = 0, numWriteBlocks = 0;
       uint64_t numReqs = 0;
-      uint64_t timeCalculated;
+      openTrace(inputTrace);
 
-      std::string line;
-      std::filebuf fb;
-      if (!fb.open(inputTrace, std::ios::in)) {
-        std::cout << "Input file error: " << inputTrace << std::endl;
-        exit(1);
-      }
-      std::istream is(&fb);
+      trace_.myTimer(true, "miss ratio");
 
-      char line2[200];
-      uint64_t cnt = 0;
-      trace.myTimer(true, "miss ratio");
-
-      while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
+      while (trace_.readNextRequestFstream(*is_, timestamp, isWrite, offset, length, line2_)) {
         for (uint64_t i = 0; i < length; i += 1) {
           if (!isWrite) {
             numReadBlocks += 1;
@@ -110,7 +84,7 @@ public:
           }
         }
 
-        trace.myTimer(false, "miss ratio");
+        trace_.myTimer(false, "miss ratio");
       }
 
       for (Cache &cache : caches) {

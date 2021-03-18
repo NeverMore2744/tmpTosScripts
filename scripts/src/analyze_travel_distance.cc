@@ -17,15 +17,9 @@
 #define INTV_TO_MINUTE 600000000
 #define MAX_MINUTE (7 * 24 * 60)
 
-class Analyzer {
-  Trace trace;
+class Analyzer : Analyzer_base {
 
   LargeArray<uint64_t>* travelDistanceHistogram_;
-
-  uint64_t startTimestamp_;
-  uint64_t nBlocks_ = -1ull;
-  uint64_t currentId_ = 0;
-  uint64_t beginTimestampInMin_ = 12816637200llu / 60; // Minimum timestamp in MSR 
 
   uint64_t getLbaDistance(uint64_t lba1, uint64_t lba2) {
     uint64_t distance = (lba1 < lba2) ? lba2 - lba1 : lba1 - lba2;
@@ -38,9 +32,9 @@ public:
 
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
-    trace.loadProperty(propertyFileName, volume);
+    trace_.loadProperty(propertyFileName, volume);
 
-    uint64_t maxLba = trace.getMaxLba(volumeId);
+    uint64_t maxLba = trace_.getMaxLba(volumeId);
     nBlocks_ = maxLba + 1;
     std::cout << nBlocks_ << std::endl;
 
@@ -50,52 +44,34 @@ public:
   void analyze(char *inputTrace)
   {
     uint64_t offset, length, timestamp;
-    char type;
-    uint64_t timeCalculated;
+    bool isWrite;
 
     std::vector<uint64_t> nextLbas;
     int nextPtr = 0;
-
-    FILE *f = fopen(inputTrace, "r");
     int tmpCnt = 0;
 
-    while (trace.readNextRequest(f, timestamp, type, offset, length) != -1) {
-      timeCalculated = timestamp / INTV_TO_MINUTE - beginTimestampInMin_;
-      if (SELECT_7D) {
-        if (timeCalculated >= MAX_MINUTE) continue;  // Add for all 
-      }
+    openTrace(inputTrace);
+    trace_.myTimer(true, "travel distances");
 
-      if (startTimestamp_ == 0) {
-        startTimestamp_ = timestamp;
-      }
-
-      // for write request
-      uint64_t begin = offset;
-      uint64_t end = offset + length;
-      offset = begin / 4096 * 4096;
-      length = (end + 4095) / 4096 * 4096 - offset;
-
-      offset /= 4096;
-      length /= 4096;
-
+    while (trace_.readNextRequestFstream(*is_, timestamp, isWrite, offset, length, line2_)) {
       uint64_t minDis = nBlocks_, dis;
 
-      if (true) { // all request
-        if (nextLbas.size() < RECENT_REQ_THRES) {
-          nextLbas.push_back(offset);
-          nextPtr = 0;
-        } else {
-          minDis = nBlocks_;
-          for (int k = 0; k < (int)nextLbas.size(); k++) {
-            dis = getLbaDistance(offset, nextLbas[k]);
-            minDis = (minDis > dis) ? dis : minDis;
-          }
-          travelDistanceHistogram_->inc(minDis);
-
-          nextLbas[nextPtr] = offset;
-          nextPtr = (nextPtr + 1) % RECENT_REQ_THRES;
+      if (nextLbas.size() < RECENT_REQ_THRES) {
+        nextLbas.push_back(offset);
+        nextPtr = 0;
+      } else {
+        minDis = nBlocks_;
+        for (int k = 0; k < (int)nextLbas.size(); k++) {
+          dis = getLbaDistance(offset, nextLbas[k]);
+          minDis = (minDis > dis) ? dis : minDis;
         }
+        travelDistanceHistogram_->inc(minDis);
+
+        nextLbas[nextPtr] = offset;
+        nextPtr = (nextPtr + 1) % RECENT_REQ_THRES;
       }
+
+      trace_.myTimer(false, "travel distances");
     }
     travelDistanceHistogram_->output();
   }

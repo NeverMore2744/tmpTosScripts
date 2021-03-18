@@ -11,8 +11,7 @@
 #include <sys/time.h>
 #include "trace.h"
 
-class Analyzer {
-  Trace trace;
+class Analyzer : Analyzer_base {
   uint64_t nReadReqs_ = 0, nWriteReqs_ = 0;
   uint64_t nReadBlocks_ = 0, nWriteBlocks_ = 0;
   uint64_t nUpdateBlocks_ = 0;
@@ -24,28 +23,19 @@ public:
 
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
-    trace.loadProperty(propertyFileName, volume);
-    writeFreq_ = new LargeArray<uint64_t>(trace.getMaxLba(volumeId) + 1);
-    readFreq_ = new LargeArray<uint64_t>(trace.getMaxLba(volumeId) + 1);
+    trace_.loadProperty(propertyFileName, volume);
+    writeFreq_ = new LargeArray<uint64_t>(trace_.getMaxLba(volumeId) + 1);
+    readFreq_ = new LargeArray<uint64_t>(trace_.getMaxLba(volumeId) + 1);
   }
 
   void analyze(char *inputTrace)
   {
     uint64_t offset, length, timestamp;
     bool isWrite;
+    openTrace(inputTrace);
+    trace_.myTimer(true, "basic statistics");
 
-    std::string line;
-    std::filebuf fb;
-    if (!fb.open(inputTrace, std::ios::in)) {
-      std::cout << "Input file error: " << inputTrace << std::endl;
-      exit(1);
-    }
-    std::istream is(&fb);
-
-    char line2[200];
-    trace.myTimer(true, "basic statistics");
-
-    while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
+    while (trace_.readNextRequestFstream(*is_, timestamp, isWrite, offset, length, line2_)) {
       if (isWrite) { // write request
         nWriteReqs_ ++;
         nWriteBlocks_ += length;
@@ -59,7 +49,7 @@ public:
         for (uint64_t i = 0; i < length; i += 1) readFreq_->inc(offset + i);
       }
 
-      trace.myTimer(false, "basic statistics");
+      trace_.myTimer(false, "basic statistics");
     }
 
     std::cout << nReadReqs_ << " " << nReadBlocks_ << " ";

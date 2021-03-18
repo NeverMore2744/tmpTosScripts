@@ -13,8 +13,7 @@
 
 #include <cassert>
 
-class Analyzer {
-  Trace trace;
+class Analyzer : Analyzer_base {
   char volume_cstr[100];
 
   LargeArray<uint64_t>* indexMap_;
@@ -23,7 +22,6 @@ class Analyzer {
   LargeArray<uint64_t>* intervalHistogramByTime_;
   LargeArray<uint64_t>* intervalHistogramByDataAmount_;
 
-  uint64_t nBlocks_ = -1ull;
   uint64_t currentId_ = 1;
 
   uint64_t getDistance(uint64_t off) {
@@ -45,9 +43,9 @@ public:
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
     strcpy(volume_cstr, volume);
-    trace.loadProperty(propertyFileName, volume);
+    trace_.loadProperty(propertyFileName, volume);
 
-    uint64_t maxLba = trace.getMaxLba(volumeId);
+    uint64_t maxLba = trace_.getMaxLba(volumeId);
     nBlocks_ = maxLba + 1;
 
     indexMap_ = new LargeArray<uint64_t>(nBlocks_);
@@ -60,23 +58,15 @@ public:
   void analyze(char *inputTrace) {
       uint64_t offset, length, timestamp;
       bool isWrite;
+      openTrace(inputTrace);
 
-      std::string line;
-      std::filebuf fb;
-      if (!fb.open(inputTrace, std::ios::in)) {
-        std::cout << "Input file error: " << inputTrace << std::endl;
-        exit(1);
-      }
-      std::istream is(&fb);
-
-      char line2[200];
       uint64_t dis, delTime;
-      trace.myTimer(true, "update distance");
+      trace_.myTimer(true, "update distance");
 
       bool first = true;
       uint64_t lastReqTimestamp;
 
-      while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
+      while (trace_.readNextRequestFstream(*is_, timestamp, isWrite, offset, length, line2_)) {
         if (first) {
           first = false;
         } else if (timestamp < lastReqTimestamp) {
@@ -100,7 +90,7 @@ public:
           }
         }
 
-        trace.myTimer(false, "update distance");
+        trace_.myTimer(false, "update distance");
       }
 
       intervalHistogramByTime_->outputNonZero();

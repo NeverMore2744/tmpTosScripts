@@ -1,20 +1,8 @@
-#include <iostream>
-#include <unordered_map>
-#include <sys/time.h>
-#include <string>
-#include <cstdint>
-#include <map>
-#include <cstdio>
-#include <vector>
-#include <set>
-#include <algorithm>
 #include "large_array.h"
 #include "trace.h"
 
-class Analyzer {
-
+class Analyzer : Analyzer_base {
   // LBA to number of reads and number of writes
-  Trace trace;
   LargeArray<uint64_t> *readReqs_;
   LargeArray<uint64_t> *writeReqs_;
   LargeArray<uint64_t> *readTraffic_;
@@ -33,8 +21,8 @@ public:
 
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
-    trace.loadProperty(propertyFileName, volume);
-    maxLba_ = trace.getMaxLba(volumeId);
+    trace_.loadProperty(propertyFileName, volume);
+    maxLba_ = trace_.getMaxLba(volumeId);
   }
 
   void analyze(char *inputTrace)
@@ -42,26 +30,14 @@ public:
     uint64_t offset, length, timestamp;
     bool isWrite;
 
-    uint64_t cnt = 0;
-    uint64_t timeCalculated;
-
-    std::string line;
-    std::filebuf fb;
-    if (!fb.open(inputTrace, std::ios::in)) {
-      std::cout << "Input file error: " << inputTrace << std::endl;
-      exit(1);
-    }
-    std::istream is(&fb);
-
-    char line2[200];
-    trace.myTimer(true, "traffic");
-
+    openTrace(inputTrace);
+    trace_.myTimer(true, "traffic");
     int size_array = maxLba_ * 8; 
     uint64_t* wwss = new uint64_t[size_array];
     memset(wwss, 0, sizeof(uint64_t) * size_array);
 
     // timestamp in 1e-7 second
-    while (trace.readNextRequestFstream(is, timestamp, type, offset, length, line2)) {
+    while (trace_.readNextRequestFstream(*is_, timestamp, isWrite, offset, length, line2_)) {
       if (offset / 64 > size_array) {
         std::cerr << "Offset too large! (" << offset << " and " << size_array << ")" << std::endl;
         exit(1);
@@ -83,7 +59,7 @@ public:
         readReqs_->inc(timeInMin);
       }
 
-      trace.myTimer(false, "traffic");
+      trace_.myTimer(false, "traffic");
     }
 
     readReqs_->outputNonZero();

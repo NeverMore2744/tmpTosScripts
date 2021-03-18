@@ -1,8 +1,20 @@
 #include<fstream>
 #include<iostream>
+#include<cinttypes>
 #include<chrono>
+#include<list>
 #include<sys/time.h>
 #include<utility>
+#include<unordered_map>
+#include<string>
+#include<cstdint>
+#include<map>
+#include<cstdio>
+#include<vector>
+#include<set>
+#include<algorithm>
+#include<unistd.h>
+#include<cstdlib>
 
 typedef std::chrono::high_resolution_clock Clock;
 typedef std::chrono::milliseconds milliseconds;
@@ -51,25 +63,6 @@ class Trace {
   uint64_t getMaxLba(std::string volumeId) {
     return properties[volumeId].second;
   }
-
-//  int readNextRequest(FILE *f, uint64_t &timestamp, char &type, uint64_t &offset, uint64_t &length) {
-//#ifdef MSRC_TRACE
-//    char volume[100], typeStr[4];
-//    uint64_t volumeNum, latency;
-//
-//    if (fscanf(f, "%lu,%[^,],%lu,%[^,],%lu,%lu,%lu", &timestamp, volume,
-//          &volumeNum, typeStr, &offset, &length, &latency) == EOF) return -1;
-//    type = typeStr[0];
-//#elif CLOUD_TRACE
-//    uint64_t volumeId;
-//    int t;
-//    if (t = (fscanf(f, "%I64u,%c,%I64u,%I64u,%I64u", &volumeId, &type, &offset, &length, &timestamp)) == EOF) {
-//      return -1;
-//    }
-//#endif
-//    return 0;
-//  }
-
 
   // timestamp: in 10e-7 second
   // offset and length: in 4KiB ("sector" enabled: 512B)
@@ -176,5 +169,29 @@ class Trace {
 
 #endif
     return 0;
+  }
+};
+
+class Analyzer_base {
+  public:
+  Trace trace_;
+
+  std::string line_, volumeId_;
+  std::filebuf fb_;
+  std::istream* is_;
+  uint64_t nBlocks_ = -1ull;
+  char line2_[200];
+  
+  void init(char *propertyFileName, char *volume) {
+    trace_.loadProperty(propertyFileName, volume);
+    volumeId_ = std::string(volume);
+  }
+
+  void openTrace(const char *inputTrace) {
+    if (!fb_.open(inputTrace, std::ios::in)) {
+      std::cerr << "Input file error: " << inputTrace << std::endl;
+      exit(1);
+    }
+    is_ = new std::istream(&fb_);
   }
 };

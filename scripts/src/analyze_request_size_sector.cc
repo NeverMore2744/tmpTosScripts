@@ -12,11 +12,9 @@
 #include "trace.h"
 #include <sys/time.h>
 
-#define INTV_TO_MINUTE 600000000
 #define MAX_MINUTE (7 * 24 * 60)
 
-class Analyzer {
-  Trace trace;
+class Analyzer : Analyzer_base {
   std::map<uint64_t, std::pair<uint64_t, uint64_t>> reqSize_;
 
 public:
@@ -25,27 +23,16 @@ public:
   {
     uint64_t offset, length, timestamp;
     bool isWrite;
+    openTrace(inputTrace);
 
-    std::string line;
-    std::filebuf fb;
-    if (!fb.open(inputTrace, std::ios::in)) {
-      std::cout << "Input file error: " << inputTrace << std::endl;
-      return;
-    }
-    std::istream is(&fb);
-
-    char line2[200];
-    uint64_t cnt = 0;
-    
-    trace.myTimer(true, "request sizes");
-
-    while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2, true)) {
-      if (isWrite == 'R') { // read request
+    trace_.myTimer(true, "request sizes");
+    while (trace_.readNextRequestFstream(*is_, timestamp, isWrite, offset, length, line2_, true)) {
+      if (!isWrite) { // read request
         reqSize_[length].first += 1;
-      } else if (isWrite == 'W') { // write request
+      } else if (isWrite) { // write request
         reqSize_[length].second += 1;
       }
-      trace.myTimer(false, "request sizes");
+      trace_.myTimer(false, "request sizes");
     }
 
     std::cout << reqSize_.size() << std::endl;

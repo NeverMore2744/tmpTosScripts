@@ -11,17 +11,12 @@
 #include "trace.h"
 #include <sys/time.h>
 
-#define INTV (600000000 / 60)
-#define INTV_TO_MINUTE 600000000
 #define MAX_MINUTE (7 * 24 * 60)
 
-class Analyzer {
-  Trace trace;
+class Analyzer : Analyzer_base {
 
   std::string volumeId_;
-  uint64_t startTimestamp_;
   uint64_t nBlocks_ = -1ull;
-  uint64_t currentId_ = 0;
 
   uint64_t getLbaDistance(uint64_t lba1, uint64_t lba2) {
     uint64_t distance = (lba1 < lba2) ? lba2 - lba1 : lba1 - lba2;
@@ -36,9 +31,9 @@ public:
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
     volumeId_ = volumeId;
-    trace.loadProperty(propertyFileName, volume);
+    trace_.loadProperty(propertyFileName, volume);
 
-    uint64_t maxLba = trace.getMaxLba(volumeId);
+    uint64_t maxLba = trace_.getMaxLba(volumeId);
     nBlocks_ = maxLba + 1;
   }
 
@@ -48,22 +43,12 @@ public:
     bool isWrite;
     std::vector<uint64_t> nextLbas;
     int nextPtr = 0;
+    openTrace(inputTrace);
 
-    std::string line;
-    std::filebuf fb;
-    if (!fb.open(inputTrace, std::ios::in)) {
-      std::cout << "Input file error: " << inputTrace << std::endl;
-      exit(1);
-    }
-    std::istream is(&fb);
-
-    char line2[200];
-    uint64_t cnt = 0;
-    trace.myTimer(true, "randomness");
-    int tmpCnt = 0;
+    trace_.myTimer(true, "randomness");
     uint64_t ansRandom = 0, ansAll = 0;
 
-    while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
+    while (trace_.readNextRequestFstream(*is_, timestamp, isWrite, offset, length, line2_)) {
       uint64_t minDis = nBlocks_, dis;
 
       if (nextLbas.size() < recentRequestNumber) {
@@ -82,7 +67,7 @@ public:
         nextLbas[nextPtr] = offset;
         nextPtr = (nextPtr + 1) % recentRequestNumber;
 
-        trace.myTimer(false, "randomness");
+        trace_.myTimer(false, "randomness");
       }
     }
     std::cout << volumeId_ << " " << recentRequestNumber << " " << windowSize << " " << ansRandom << " " << ansAll << " " << std::endl;
