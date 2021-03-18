@@ -141,26 +141,7 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-//  Analyzer analyzer;
-//  
-//  if (argc < 3) {
-//    printf("Error: parameter not enough\n");
-//    printf("   %s <trace_file> <device_name> <futureSize> <neighborSize>\n", argv[0]);
-//    return 1;
-//  }
-//  analyzer.init("device_property_translated.txt", argv[2]);
-//  analyzer.analyze(argv[1]);
-//  return 0;
-
-  uint64_t maxLba;
-  if (argc < 3) {
-    std::cerr << "Input error" << std::endl;
-    return 1;
-  }
-  sscanf(argv[2], "%llu", &maxLba);
-
   Analyzer analyzer;
-//  analyzer.init(argv[3], argv[1]);
-  analyzer.analyze(argv[1], maxLba);
-  return 0;
+  analyzer.init(argv[3], argv[1]);
+  analyzer.analyze(argv[2]);
 }

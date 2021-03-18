@@ -36,10 +36,6 @@ class Analyzer {
       index = 5, value = secondMult10 / 10;
     }
 
-    if (intervalHistograms_[index]->getSize() <= value) {
-      std::cerr << "Error in updateInterArrivalTime: " << index << " " << value << " <= " << intervalHistograms_[index]->getSize() << std::endl;
-      exit(1);
-    }
     intervalHistograms_[index]->inc(value);
   }
 
@@ -51,12 +47,12 @@ public:
       intervalHistograms_[2] = new LargeArray<uint64_t>(100 * 1000); // 1-10s, by 10^-5
       intervalHistograms_[3] = new LargeArray<uint64_t>(1000 * 10); // 10-100s, by 10^-3
       intervalHistograms_[4] = new LargeArray<uint64_t>(10000 * 1); // 100-1000s, by 10^-1
-      intervalHistograms_[5] = new LargeArray<uint64_t>(9 * 24 * 3600); // > 1000s, by 1s
+      intervalHistograms_[5] = new LargeArray<uint64_t>(31 * 24 * 3600); // > 1000s, by 1s
 
       uint64_t offset, length, timestamp;
       uint64_t prevTimestamp = -1ull;
       uint64_t timeCalculated;
-      char type;
+      bool isWrite;
 
       std::string line;
       std::filebuf fb;
@@ -68,15 +64,11 @@ public:
 
       char line2[200];
       uint64_t cnt = 0;
-      timeval tv1, tv2;
-      gettimeofday(&tv1, NULL);
+      trace.myTimer(true, "interarrival time");
 
-      uint64_t inverse_req = 0;
-
-      while (trace.readNextRequestFstream(is, timestamp, type, offset, length, line2)) {
+      while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
         if (prevTimestamp != -1ull) {
           if (timestamp < prevTimestamp) {
-            inverse_req++; 
             continue;
           }
           updateInterArrivalTime(timestamp - prevTimestamp);
@@ -85,14 +77,8 @@ public:
           prevTimestamp = timestamp;
         }
 
-        cnt++;
-        if (cnt % 100000 == 0) {
-          gettimeofday(&tv2, NULL);
-          std::cerr << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
-        }
+        trace.myTimer(false, "interarrival time");
       }
-
-      std::cerr << "Inverse requests in time: " << inverse_req << std::endl;
 
       for (int i = 0; i < 6; ++i) {
         intervalHistograms_[i]->outputNonZero();
@@ -102,5 +88,5 @@ public:
 
 int main(int argc, char *argv[]) {
   Analyzer analyzer;
-  analyzer.analyze(argv[1]);
+  analyzer.analyze(argv[2]);
 }

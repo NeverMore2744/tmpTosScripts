@@ -49,7 +49,6 @@ public:
 
     uint64_t maxLba = trace.getMaxLba(volumeId);
     nBlocks_ = maxLba + 1;
-    std::cout << nBlocks_ << std::endl;
 
     indexMap_ = new LargeArray<uint64_t>(nBlocks_);
     lastTimestamp_ = new LargeArray<uint64_t>(nBlocks_);
@@ -71,9 +70,8 @@ public:
       std::istream is(&fb);
 
       char line2[200];
-      uint64_t cnt = 0, dis, delTime;
-      timeval tv1, tv2;
-      gettimeofday(&tv1, NULL);
+      uint64_t dis, delTime;
+      trace.myTimer(true, "update distance");
 
       bool first = true;
       uint64_t lastReqTimestamp;
@@ -102,12 +100,7 @@ public:
           }
         }
 
-        cnt++;
-        if (cnt % 1000000 == 0) {
-          gettimeofday(&tv2, NULL);
-          std::cerr << "Volume " << volume_cstr << ": " 
-            << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
-        }
+        trace.myTimer(false, "update distance");
       }
 
       intervalHistogramByTime_->outputNonZero();

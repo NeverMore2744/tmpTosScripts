@@ -59,11 +59,8 @@ public:
 
     char line2[200];
     uint64_t cnt = 0;
-    timeval tv1, tv2;
-    gettimeofday(&tv1, NULL);
-
+    trace.myTimer(true, "randomness");
     int tmpCnt = 0;
-
     uint64_t ansRandom = 0, ansAll = 0;
 
     while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
@@ -85,12 +82,7 @@ public:
         nextLbas[nextPtr] = offset;
         nextPtr = (nextPtr + 1) % recentRequestNumber;
 
-        cnt++;
-        if (cnt % 1000000 == 0) {
-          gettimeofday(&tv2, NULL);
-          std::cerr << "Volume " << volumeId_ << ": " 
-            << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
-        }
+        trace.myTimer(false, "randomness");
       }
     }
     std::cout << volumeId_ << " " << recentRequestNumber << " " << windowSize << " " << ansRandom << " " << ansAll << " " << std::endl;

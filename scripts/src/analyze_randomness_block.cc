@@ -63,12 +63,7 @@ public:
     std::istream is(&fb);
 
     char line2[200];
-    uint64_t cnt = 0;
-    timeval tv1, tv2;
-    gettimeofday(&tv1, NULL);
-
-    int tmpCnt = 0;
-
+    trace.myTimer(true, "randomnes block");
     uint64_t ansRandom = 0, ansAll = 0;
 
     while (trace.readNextRequestFstream(is, timestamp, type, offset, length, line2)) {
@@ -91,11 +86,7 @@ public:
           nextLbas[nextPtr] = offset_i;
           nextPtr = (nextPtr + 1) % recentRequestNumber;
 
-          cnt++;
-          if (cnt % 100000 == 0) {
-            gettimeofday(&tv2, NULL);
-            std::cerr << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
-          }
+          trace.myTimer(false, "randomnes block");
         }
       }
     }

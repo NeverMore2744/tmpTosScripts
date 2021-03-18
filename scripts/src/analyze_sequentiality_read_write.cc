@@ -47,8 +47,6 @@ class Analyzer {
 
     public:
     ClassAnalyzer(int classId, char* filePrefix): classId_(classId) {
-//      sprintf(filename_, "%s.data", filePrefix);
-//      std::cerr << "filename = " << filename_ << std::endl;
     }
 
     void analyze_class(uint64_t timestamp, char type, uint64_t offset, uint64_t length) {
@@ -119,9 +117,8 @@ public:
       std::istream is(&fb);
 
       char line2[200];
-      uint64_t cnt = 0, dis, delTime;
-      timeval tv1, tv2;
-      gettimeofday(&tv1, NULL);
+      uint64_t dis, delTime;
+      trace.myTimer(true, "sequentiality read & write")
 
       while (trace.readNextRequestFstream(is, timestamp, type, offset, length, line2)) {
         while ((int)analyzers.size() <= openId) {
@@ -130,11 +127,7 @@ public:
         }
         analyzers[openId].analyze_class(timestamp, type, offset, length);
 
-        cnt++;
-        if (cnt % 1000000 == 0) {
-          gettimeofday(&tv2, NULL);
-          std::cerr << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
-        }
+        trace.myTimer(false, "sequentiality read & write")
       }
 
       for (int i = 0; i < (int)analyzers.size(); i++) {
@@ -145,26 +138,7 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-//  Analyzer analyzer;
-//  
-//  if (argc < 3) {
-//    printf("Error: parameter not enough\n");
-//    printf("   %s <trace_file> <device_name> <futureSize> <neighborSize>\n", argv[0]);
-//    return 1;
-//  }
-//  analyzer.init("device_property_translated.txt", argv[2]);
-//  analyzer.analyze(argv[1]);
-//  return 0;
-
-  uint64_t maxLba;
-  if (argc < 3) {
-    std::cerr << "Input error" << std::endl;
-    return 1;
-  }
-  sscanf(argv[2], "%llu", &maxLba);
-
   Analyzer analyzer;
-//  analyzer.init(argv[3], argv[1]);
-  analyzer.analyze(argv[1], maxLba);
-  return 0;
+  analyzer.init(argv[3], argv[1]);
+  analyzer.analyze(argv[2]);
 }

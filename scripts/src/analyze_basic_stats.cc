@@ -43,9 +43,7 @@ public:
     std::istream is(&fb);
 
     char line2[200];
-    uint64_t cnt = 0;
-    timeval tv1, tv2;
-    gettimeofday(&tv1, NULL);
+    trace.myTimer(true, "basic statistics");
 
     while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
       if (isWrite) { // write request
@@ -61,9 +59,7 @@ public:
         for (uint64_t i = 0; i < length; i += 1) readFreq_->inc(offset + i);
       }
 
-      if (++cnt % 1000000 == 0) {
-        gettimeofday(&tv2, NULL); std::cerr << cnt << " " << tv2.tv_sec - tv1.tv_sec << " seconds" << std::endl;
-      }
+      trace.myTimer(false, "basic statistics");
     }
 
     std::cout << nReadReqs_ << " " << nReadBlocks_ << " ";

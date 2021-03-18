@@ -12,10 +12,6 @@
 
 #include <cassert>
 
-#define INTV (10000000 * 60)
-#define INTV_TO_MINUTE 600000000
-#define MAX_MINUTE (7 * 24 * 60)
-
 class Analyzer {
   Trace trace;
   const uint32_t max_dis = 8192; // 128 GiB as maximum
@@ -28,7 +24,6 @@ class Analyzer {
   uint64_t startTimestamp_ = 0;
   uint64_t nBlocks_ = -1ull;
   uint64_t currentId_ = 1;
-  uint64_t beginTimestampInMin_ = 12816637200llu / 60; // Minimum timestamp in MSR 
 
   uint32_t getDistance(uint64_t off) { // Return as number of 16MiB 
     uint64_t distance = currentId_ - indexMap_->get(off);
@@ -57,7 +52,7 @@ public:
   void analyze(char *inputTrace) {
 
     uint64_t offset, length, timestamp;
-    char type;
+    bool isWrite;
     uint64_t timeCalculated;
 
     std::string line;
@@ -78,8 +73,8 @@ public:
       v0values.push_back(1 << i);
     }
 
-    while (trace.readNextRequestFstream(is, timestamp, type, offset, length, line2)) {
-      if (type != 'W') continue;
+    while (trace.readNextRequestFstream(is, timestamp, isWrite, offset, length, line2)) {
+      if (!isWrite) continue;
 
       for (uint64_t i = 0; i < length; i += 1) {
         if (indexMap_->get(offset + i) != 0) {
@@ -132,7 +127,7 @@ public:
 
 int main(int argc, char *argv[]) {
   Analyzer analyzer;
-  analyzer.init("ali_open_property.txt", argv[2]);
-  analyzer.analyze(argv[1]);
+  analyzer.init(argv[3], argv[1]);
+  analyzer.analyze(argv[2]);
   return 0;
 }

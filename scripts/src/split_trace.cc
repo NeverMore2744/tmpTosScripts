@@ -15,16 +15,12 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#define INTV_TO_MINUTE 600000000
-#define MAX_MINUTE (7 * 24 * 60)
-
 class Split {
   Trace trace;
 
   uint64_t startTimestamp_ = 0;
   uint64_t nBlocks_ = -1ull;
   uint64_t currentId_ = 0;
-  uint64_t beginTimestampInMin_ = 12816637200llu / 60; // Minimum timestamp in MSR 
 
 public:
 
