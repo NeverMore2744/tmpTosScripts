@@ -71,14 +71,14 @@ struct lbaStat {
         double sd = sqrt((double)(sqrSum / (n - 1)) 
             - 2.0 * avg / (n - 1) * sum + 
             (double) n / (n-1) * avg * avg);
-        double cv = sd / avg;
+        double cv = (sum == 0) ? 0.0 : sd / avg;
 
-        int index = (int)(log(cv) / log(2) * 10 + 50); 
+        int index = (cv == 0.0) ? 0 : (int)(log(cv) / log(2) * 10 + 50); 
         int index2 = (index < 0) ? 0 : (index > 100 ? 100 : (int)index);
         cnts[index2]++;
 
         if (outi % 200000 == 3) {
-          std::cerr << n << " " << avg << " " << sd << " " << cv << " " << index << " " << index2<< std::endl;
+          std::cerr << n << " " << sum << " " << sqrSum << " " << avg << " " << sd << " " << cv << " " << index << " " << index2<< std::endl;
         }
       }
 
