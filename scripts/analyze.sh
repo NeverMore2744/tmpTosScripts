@@ -18,7 +18,10 @@ analyze_multiple_files() {
     bin="bin/${trace_prefix[$K]}${bin_suffix}"
     output_dir="result/${trace_prefix[$K]}${output_suffix}"
     if [[ ! -d $output_dir ]]; then
-      mkdir $output_dir
+      mkdir -p $output_dir
+    fi
+    if [[ ! -d bin ]]; then
+      mkdir bin
     fi
 
     property_file="result/${trace_prefix[$K]}_property.data"
