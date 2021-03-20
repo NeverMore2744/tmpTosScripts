@@ -78,7 +78,7 @@ struct lbaStat {
         cnts[index2]++;
 
         if (outi % 200000 == 3) {
-          std::cerr << n << " " << sum << " " << sqrSum << " " << avg << " " << sd << " " << cv << " " << index << " " << index2<< std::endl;
+          std::cerr << std::fixed << n << " " << sum << " " << sqrSum << " " << avg << " " << sd << " " << cv << " " << index << " " << index2 << std::endl;
         }
       }
 
@@ -86,11 +86,11 @@ struct lbaStat {
         std::cout << "outi = " << outi << std::endl;
         std::cout << 100 << std::endl;;
         for (int i = 0; i < 100; i++) {
-          std::cout << i << " " << cnts[i] << std::endl;
+          std::cout << std::fixed << i << " " << cnts[i] << std::endl;
         }
         std::cout << 128 << std::endl;;
         for (int i = 0; i < 128; i++) {
-          std::cout << i << " " << gbBuckets[i] << std::endl;
+          std::cout << std::fixed << i << " " << gbBuckets[i] << std::endl;
         }
       }
     }
