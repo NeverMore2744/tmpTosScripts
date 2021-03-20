@@ -83,7 +83,7 @@ struct lbaStat {
       }
 
       if (outi % (len / 100) == 0) {
-        std::cout << "outi = " << outi << std::endl;
+        std::cout << outi << " " << n << std::endl;
         std::cout << 100 << std::endl;;
         for (int i = 0; i < 100; i++) {
           std::cout << std::fixed << i << " " << cnts[i] << std::endl;

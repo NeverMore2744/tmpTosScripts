@@ -55,8 +55,9 @@ class Trace {
       if (++cnt % 1000000 == 0) {
         Clock::time_point te = Clock::now();
         double duration2 = (std::chrono::duration_cast <std::chrono::milliseconds> (te - ts)).count() / 1024.0;
-        fprintf(stderr, "Volume %s analysis on %s: %lu requests, %lf seconds, read %.6lf GiB\n", 
-            volumeId_.c_str(), event, cnt, duration2, (double)totReadBytes_ / 1024.0 / 1024.0 / 1024.0);
+        fprintf(stderr, "Volume %s analysis on %s: %lu requests, %lf seconds, read %.6lf GiB, speed %.6lf MiB/s\n", 
+            volumeId_.c_str(), event, cnt, duration2, (double)totReadBytes_ / 1024.0 / 1024.0 / 1024.0, 
+            (double)totReadBytes_ / 1024.0 / 1024.0 / duration2);
       }
     }
   }
