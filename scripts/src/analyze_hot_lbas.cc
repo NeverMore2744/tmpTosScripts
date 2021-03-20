@@ -71,19 +71,26 @@ struct lbaStat {
           - 2.0 * avg / (n - 1) * sum + 
           (double) n / (n-1) * avg * avg);
       double cv = sd / avg;
-      int index = (int)(log(cv) / log(2) * 10); 
+
+
+      int index = (int)(log(cv) / log(2) * 10 + 50); 
       int index2 = (index < 0) ? 0 : (index > 100 ? 100 : (int)index);
       cnts[index2]++;
+
+      if (i % 200000 == 3) {
+        std::cerr << avg << " " << sd << " " << cv << " " << index << " " << index2<< std::endl;
+      }
     }
-    std::cout << 100;
+    std::cout << 100 << std::endl;;
     for (int i = 0; i < 100; i++) {
       std::cout << i << " " << cnts[i] << std::endl;
     }
-    std::cout << 128;
+    std::cout << 128 << std::endl;;
     for (int i = 0; i < 128; i++) {
       std::cout << i << " " << gbBuckets[i] << std::endl;
     }
 
+    std::cout << calculated << " " << coldCalculated << " " << lifespanNums->getSize() << std::endl;
     std::cerr << " calculated hot " << calculated << " and cold " << coldCalculated << " size " << lifespanNums->getSize() << std::endl;
   }
 
@@ -140,7 +147,6 @@ public:
 
     openTrace(inputTrace);
     uint64_t maxLbaIndex = 0, lbaIndex = 0, lba, coldUdIndex;
-    std::unordered_set<uint64_t> sets;
 
     trace_.myTimer(true, "hotcold");
 
@@ -158,10 +164,7 @@ public:
           lba2lbaIndex_->put(lba, maxLbaIndex);
           maxLbaIndex++;
         }
-        sets.insert(lbaIndex);
-
         uint8_t freq = frequencies_->get(lbaIndex); // before this update, how many updates have happened
-        indexMap_->put(lba, ++currentId_);
         frequencies_->put(lbaIndex, ((freq > 10) ? 11 : freq + 1));
 
         if (lastBlockId != 0) { // an old LBA 
@@ -181,12 +184,14 @@ public:
             coldUds_->put(j, 0);
           }
         }
+
+        indexMap_->put(lba, ++currentId_);
       }
 
       trace_.myTimer(false, "hotcold");
     }
 
-    std::cerr << "finished, mapping ... processing cold LBAs ... maxLbaIndex = " << maxLbaIndex << " sets.size() " << sets.size() << std::endl;
+    std::cerr << "finished, mapping ... processing cold LBAs ... maxLbaIndex = " << maxLbaIndex << std::endl;
     std::map<uint32_t, uint64_t> coldUd2coldUdFreq;
     uint64_t numColdLbas = 0, freq1numColdLbas = 0;
 
@@ -196,20 +201,20 @@ public:
       coldUd2coldUdFreq[value]++;
     }
 
-    for (uint64_t lba = 0; lba < frequencies_->getSize(); lba++) {
-      uint8_t freq = frequencies_->get(lba);
-      if (freq == 1) freq1numColdLbas++;
-      if (freq >= 5) continue;
-      if (freq == 0) continue;
-//      coldUd2coldUdFreq[getDistance(lba)]++; // This is wrong
-      numColdLbas++;
-    }
-
-    std::cerr << "finished, writing ... totally " << numColdLbas << " cold LBAs with freq 1 " << freq1numColdLbas << std::endl;
-    std::cout << coldUd2coldUdFreq.size() << std::endl;
-    for (auto& it : coldUd2coldUdFreq) {
-      std::cout << it.first << " " << it.second << std::endl;
-    }
+//    for (uint64_t lba = 0; lba < frequencies_->getSize(); lba++) {
+//      uint8_t freq = frequencies_->get(lba);
+//      if (freq == 1) freq1numColdLbas++;
+//      if (freq >= 5) continue;
+//      if (freq == 0) continue;
+////      coldUd2coldUdFreq[getDistance(lba)]++; // This is wrong
+//      numColdLbas++;
+//    }
+//
+//    std::cerr << "finished, writing ... totally " << numColdLbas << " cold LBAs with freq 1 " << freq1numColdLbas << std::endl;
+//    std::cout << coldUd2coldUdFreq.size() << std::endl;
+//    for (auto& it : coldUd2coldUdFreq) {
+//      std::cout << it.first << " " << it.second << std::endl;
+//    }
 
     std::cerr << "finished, processing ... processing hot LBAs" << std::endl;
 //    uint64_t cnt = 0;

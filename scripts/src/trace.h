@@ -22,6 +22,7 @@ typedef std::chrono::milliseconds milliseconds;
 class Trace {
   std::unordered_map<std::string, std::pair<uint64_t, uint64_t>> properties;
   std::string line_, volumeId_;
+  uint64_t totReadBytes_ = 0;
 
   public:
   void loadProperty(char *propertyFile, const char* selectedVolume) {
@@ -50,8 +51,8 @@ class Trace {
       if (++cnt % 1000000 == 0) {
         Clock::time_point te = Clock::now();
         double duration2 = (std::chrono::duration_cast <std::chrono::milliseconds> (te - ts)).count() / 1024.0;
-        fprintf(stderr, "Volume %s analysis on %s: %lu requests, %lf seconds\n", 
-            volumeId_.c_str(), event, cnt, duration2);
+        fprintf(stderr, "Volume %s analysis on %s: %lu requests, %lf seconds, read %.6lf GiB\n", 
+            volumeId_.c_str(), event, cnt, duration2, (double)totReadBytes_ / 1024.0 / 1024.0 / 1024.0);
       }
     }
   }
@@ -72,6 +73,7 @@ class Trace {
       return 0;
     }
     strcpy(line_cstr, line_.c_str());
+    totReadBytes_ += line_.length() + 1;
 
 #ifdef TENCENTCLOUD
     uint64_t beginTimestampInSec = 1538326799llu; // Minimum timestamp in Tencent 

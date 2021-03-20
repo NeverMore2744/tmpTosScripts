@@ -129,7 +129,6 @@ int main(int argc, char** argv) {
   std::map<uint64_t, uint64_t> rar2cnt;
   uint64_t globalWarCnts = 0, globalRarCnts = 0;
 
-
   std::filebuf fb;
   if (!fb.open(argv[2], std::ios::in)) {
     std::cerr << "Input file error: " << argv[2] << std::endl;
