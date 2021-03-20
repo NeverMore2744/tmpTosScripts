@@ -68,7 +68,7 @@ struct lbaStat {
         uint64_t sum = lifespanSums->get(i);
         uint64_t sqrSum = lifespanSqrSums->get(i);
         double avg = (double)sum / n;
-        double sd = sqrt((double)(sqrSum / (n - 1)) 
+        double sd = sqrt((double)sqrSum / (n - 1) 
             - 2.0 * avg / (n - 1) * sum + 
             (double) n / (n-1) * avg * avg);
         double cv = (sum == 0) ? 0.0 : sd / avg;
