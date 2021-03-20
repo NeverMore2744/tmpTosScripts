@@ -33,6 +33,10 @@ class Trace {
 
     if (propertyFile != nullptr) {
       f = fopen(propertyFile, "r");
+      if (f == nullptr) {
+        std::cerr << "Propertyfile " << propertyFile << " not exist." << std::endl;
+        exit(1);
+      }
       char tmp[300];
       while (fscanf(f, "%s %lu %lu", tmp, &uniqueLba, &maxLba) != EOF) {
         volumeId = std::string(tmp);
