@@ -1,6 +1,6 @@
 #!/bin/bash
 
-outputfiles=()
+source common.sh
 
 process_file() {
   bin_suffix=$1;
@@ -16,11 +16,15 @@ process_file() {
   fi
 
   for ((K=0; K<${#define_names[@]}; K++)); do
-    bin="bin/${trace_prefix[$K]}${bin_suffix}"
+    bin="bin/${bin_suffix}"
     output_dir="processed/$output_suffix/"
     analyzed_dir="result/${trace_prefix[$K]}${analyzed_suffix}/"
+    echo "bin = $bin, analyzed_dir = $analyzed_dir, output_dir = $output_dir"
     if [[ ! -d $output_dir ]]; then
-      mkdir $output_dir
+      mkdir -p $output_dir
+    fi
+    if [[ ! -d bin ]]; then
+      mkdir bin
     fi
 
     echo "Processing ${display_names[$K]} on $disp ... output at directory $output_dir"
@@ -31,22 +35,18 @@ process_file() {
       exit
     fi
 
-    output_files=${output_dir}/$line.data
     output=tmp.txt
-#    sz=`ls -s ${output} 2>/dev/null | awk '{print $1;}'`
-#    if [[ $? -ne 0 || $sz -eq 0 ]]; then  # Not exist, or empty file
-      $bin $analyzed_prefix $trace_file_paths[$K] ${params[@]} > $output
-#    else
-#      echo "Volume $line in ${display_names[$K]} is analyzed before, skip"
-#    fi
+    $bin $analyzed_dir ${trace_file_paths[$K]} ${params[@]} > $output
 
     cat $output
-
-    set -x
+#
     cat $output | while read line; do
       mv $line $output_dir/${trace_prefix[$K]}_$line
     done
+    rm -f tmp.txt
   done
 }
 
-process_file "_hot_lbas" "_hot_lbas" "hot_lbas" "src/process_hot_lbas.cc" "Hot LBAs"
+#process_file "pc_hot_groups" "_hot_groups" "hot_groups" "src/process_hot_lbas_groups.cc" "Hot LBAs"
+process_file "ar" "_ar" "ar" "src/process_ar.cc" "RAR and WAR"
+process_file "aw" "_aw" "aw" "src/process_aw.cc" "RAW and WAW"

@@ -73,7 +73,7 @@ struct lbaStat {
             (double) n / (n-1) * avg * avg);
         double cv = (sum == 0) ? 0.0 : sd / avg;
 
-        int index = (cv == 0.0) ? 0 : (int)(log(cv) / log(2) * 10 + 50); 
+        int index = (cv == 0.0) ? 0 : (int)(log(cv) / log(2) * 25 + 50); 
         int index2 = (index < 0) ? 0 : (index > 100 ? 100 : (int)index);
         cnts[index2]++;
 
@@ -82,7 +82,7 @@ struct lbaStat {
         }
       }
 
-      if (outi % (len / 100) == 0) {
+      if (outi % (len / 1000) == 0) {
         std::cout << outi << " " << n << std::endl;
         std::cout << 100 << std::endl;;
         for (int i = 0; i < 100; i++) {

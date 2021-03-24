@@ -152,7 +152,10 @@ int main(int argc, char** argv) {
     uint64_t rows;
 
     // fout1: raw time
-    fgets(s, 200, fin);
+    char* retChar = fgets(s, 200, fin);
+    if (retChar == nullptr) {
+      std::cerr << "Empty file\n";
+    }
     sscanf(s, "%lu", &rows);
     takeSecond(fin, fout, fout1_2, volume.c_str(), rows, waw2cnt, globalWarCnts);
 
@@ -205,6 +208,8 @@ int main(int argc, char** argv) {
 
   fclose(fout1g);
   fclose(fout3g);
+
+  std::cout << "raw_time.data\nwaw_time.data\nraw_time_pcts.data\nwaw_time_pcts.data\n";
 
   return 0;
 }

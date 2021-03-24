@@ -66,14 +66,14 @@ merge() {
   done
 }
 
-echo "0. analyze the properties of three traces .. ";
-analyze_multiple_files "_property" "_property" "src/analyze_property.cc" "properties"
-merge "" "_property/" "_property.data" 
-echo ""
-
-echo "1. analyze basic statistics of three traces ..";
-analyze_multiple_files "_bs" "_bs" "src/analyze_basic_stats.cc" "basic statistics"
-echo ""
+#echo "0. analyze the properties of three traces .. ";
+#analyze_multiple_files "_property" "_property" "src/analyze_property.cc" "properties"
+#merge "" "_property/" "_property.data" 
+#echo ""
+#
+#echo "1. analyze basic statistics of three traces ..";
+#analyze_multiple_files "_bs" "_bs" "src/analyze_basic_stats.cc" "basic statistics"
+#echo ""
 
 echo "2. analyze read distances (RAR and WAR) of three traces ..";
 analyze_multiple_files "_ar" "_ar" "src/analyze_after_read_distance.cc" "RAR and WAR"
@@ -83,21 +83,21 @@ echo "3. analyze write distances (RAW and WAW) of three traces ..";
 analyze_multiple_files "_aw" "_aw" "src/analyze_after_write_distance.cc" "RAW and WAW" 
 echo ""
 
-echo "4. analyze update distances of three traces ..";
-analyze_multiple_files "_ud" "_ud" "src/analyze_update_distance.cc" "update distances" 
-echo ""
-
-echo "5. analyze randomness of three traces ..";
-analyze_multiple_files "_rand" "_rand" "src/analyze_randomness.cc" "randomness" 32 32 
-merge "" "_rand/" "_rand.data"
-echo ""
-
-echo "6. analyze request sizes of three traces ..";
-analyze_multiple_files "_reqsz" "_reqsz" "src/analyze_request_size_sector.cc" "request sizes" 
-echo ""
-
-echo "7. analyze inter-arrival time of three traces ..."
-analyze_multiple_files "_int" "_int" "src/analyze_interarrival_time.cc" "interarrival time" 
-echo ""
+#echo "4. analyze update distances of three traces ..";
+#analyze_multiple_files "_ud" "_ud" "src/analyze_update_distance.cc" "update distances" 
+#echo ""
+#
+#echo "5. analyze randomness of three traces ..";
+#analyze_multiple_files "_rand" "_rand" "src/analyze_randomness.cc" "randomness" 32 32 
+#merge "" "_rand/" "_rand.data"
+#echo ""
+#
+#echo "6. analyze request sizes of three traces ..";
+#analyze_multiple_files "_reqsz" "_reqsz" "src/analyze_request_size_sector.cc" "request sizes" 
+#echo ""
+#
+#echo "7. analyze inter-arrival time of three traces ..."
+#analyze_multiple_files "_int" "_int" "src/analyze_interarrival_time.cc" "interarrival time" 
+#echo ""
 
 

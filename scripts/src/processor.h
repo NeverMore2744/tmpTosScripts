@@ -1,3 +1,8 @@
+#include<string>
+#include<fstream>
+#include<iostream>
+
+
 class Processor_base {
 
   public:
@@ -6,11 +11,11 @@ class Processor_base {
   std::istream* is_;
 
   void openVolumeFile(const char* file) {
-    if (!fb_.open(argv[2], std::ios::in)) {
-      std::cerr << "Input file error: " << argv[2] << std::endl;
+    if (!fb_.open(file, std::ios::in)) {
+      std::cerr << "Input file error: " << file << std::endl;
       exit(1);
     }
     is_ = new std::istream(&fb_);
   }
   
-}
+};
