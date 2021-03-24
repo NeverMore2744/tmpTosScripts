@@ -1,5 +1,7 @@
 bin/
 result/
 processed/
+tmp.txt
+tmp_dir/
 analyze_tmp.sh
 *.swp
