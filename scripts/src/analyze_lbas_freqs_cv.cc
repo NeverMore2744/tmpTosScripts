@@ -6,7 +6,8 @@
 #include <cassert>
 
 struct lbaStat {
-  LargeArray<uint64_t>* lifespanNums, *lifespanSums, *lifespanSqrSums;
+  LargeArray<uint64_t>* lifespanNums, *lifespanSums;
+  LargeArray<uint64_t>* lifespanSqrSums;
   uint64_t gbBuckets[128];
 
   void init(uint64_t length) {
@@ -47,7 +48,11 @@ struct lbaStat {
     memset(cnts, 0, sizeof(cnts));
     uint64_t calculated = 0, coldCalculated = 0;
     uint64_t lastUpdateCnt = 0;
-    uint64_t cumuSum = 0, cumuSqrSum = 0, cumuN = 0, cumuNlbas = 0;
+    uint64_t cumuSum = 0, cumuN = 0, cumuSqrSum = 0, cumuNlbas = 0;
+    uint64_t thres = ((uint64_t)1) << 61;
+    bool mark = false;
+
+    double cumuSqrSumDouble = 0.0;
     double avg, sd, cv;
 
     std::cerr << len << std::endl;
@@ -75,16 +80,24 @@ struct lbaStat {
           sd = (cumuN == 1) ? 0.0 : sqrt((double)cumuSqrSum / (cumuN - 1)
               - 2.0 * avg / (cumuN - 1) * cumuSum 
               + (double) cumuN / (cumuN - 1) * avg * avg);
+          if (mark || std::isnan(sd) || cumuSqrSum > thres) {
+            sd = (cumuN == 1) ? 0.0 : sqrt(cumuSqrSumDouble / (cumuN - 1)
+                - 2.0 * avg / (cumuN - 1) * cumuSum 
+                + (double) cumuN / (cumuN - 1) * avg * avg);
+            mark = true;
+          }
           cv = (cumuSum == 0) ? 0.0 : sd / avg;
-          std::cout << std::fixed << lastUpdateCnt << " " << cumuN << " " << cumuNlbas << " " << cumuSqrSum << " " << cumuSum << " " << avg << " " << sd << " " << cv << std::endl;
+          std::cout << std::fixed << lastUpdateCnt << " " << cumuN << " " << cumuNlbas << " " << cumuSqrSumDouble << " " << cumuSum << " " << avg << " " << sd << " " << cv << std::endl;
         }
 
         cumuN = cumuNlbas = cumuSqrSum = cumuSum = 0;
+        cumuSqrSumDouble = 0.0;
       }
 
       lastUpdateCnt = n;
       cumuSum += lifespanSums->get(i);
       cumuSqrSum += lifespanSqrSums->get(i);
+      cumuSqrSumDouble += lifespanSqrSums->get(i);
       cumuN += n;
       cumuNlbas ++;
 
@@ -95,7 +108,7 @@ struct lbaStat {
 //        double cv = (sum == 0) ? 0.0 : sd / avg;
 
       if (outi % 200000 == 3) {
-        std::cerr << std::fixed << n << " " << cumuN << " " << cumuNlbas << " " << cumuSqrSum << " " << cumuSum << " " << avg << " " << sd << " " << cv << std::endl;
+        std::cerr << std::fixed << n << " " << cumuN << " " << cumuNlbas << " " << cumuSqrSum << " " << cumuSqrSumDouble << " " << cumuSum << " last: " << avg << " " << sd << " " << cv << std::endl;
       }
     }
 
