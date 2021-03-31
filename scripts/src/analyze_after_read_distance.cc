@@ -1,16 +1,5 @@
-#include <iostream>
-#include <unordered_map>
-#include <string>
-#include <cstdint>
-#include <map>
-#include <cstdio>
-#include <vector>
-#include <set>
-#include <algorithm>
 #include "large_array.h"
 #include "trace.h"
-#include <string>
-#include <sys/time.h>
 
 class Analyzer : Analyzer_base {
   LargeArray<uint64_t>* indexMap_;

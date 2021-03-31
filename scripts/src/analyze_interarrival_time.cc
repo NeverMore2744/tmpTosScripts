@@ -1,8 +1,9 @@
 #include "large_array.h"
-#include "trace_.h"
+#include "trace.h"
 
-class Analyzer : Analyzer_base {
+class Analyzer : public Analyzer_base {
   LargeArray<uint64_t>** intervalHistograms_;
+  uint64_t intt_num = 0;
 
   // diff is in 1e-7 seconds
   void updateInterArrivalTime(uint64_t diff) {
@@ -23,22 +24,12 @@ class Analyzer : Analyzer_base {
     }
 
     intervalHistograms_[index]->inc(value);
+    intt_num ++;
   }
 
 public:
-  // initialize properties
-  void init(char *propertyFileName, char *volume) {
-    trace_.loadProperty(propertyFileName, volume);
-  }
-
   void summary() {
-    uint64_t intt_num = 0, cnt = 0, pct = 1;
-    for (int i = 0; i < 6; i++) {
-      for (int j = 0; j < intervalHistograms_[i]->getSize(); j++) {
-        intt_num += intervalHistograms_[i]->get(j);
-      }
-    }
-
+    uint64_t cnt = 0, pct = 1;
     for (int i = 0; i < 6; i++) {
       for (int j = 0; j < intervalHistograms_[i]->getSize(); j++) {
         uint64_t diffCnt = intervalHistograms_[i]->get(j);
@@ -51,6 +42,8 @@ public:
           else if (i == 4) timeIn100ns *= 1000000;
           else if (i == 5) timeIn100ns *= 10000000;
           printf("%s %.7lf %lldth\n", volumeId_.c_str(), (double)timeIn100ns / 10000000, pct);
+
+          pct++;
         }
       }
     }
@@ -94,5 +87,6 @@ public:
 
 int main(int argc, char *argv[]) {
   Analyzer analyzer;
+  analyzer.init(argv[3], argv[1]);
   analyzer.analyze(argv[2]);
 }

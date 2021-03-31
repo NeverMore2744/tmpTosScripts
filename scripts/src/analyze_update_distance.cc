@@ -1,17 +1,5 @@
-#include <iostream>
-#include <unordered_map>
-#include <string>
-#include <cstdint>
-#include <map>
-#include <cstdio>
-#include <vector>
-#include <set>
-#include <algorithm>
 #include "large_array.h"
 #include "trace.h"
-#include <sys/time.h>
-
-#include <cassert>
 
 class Analyzer : Analyzer_base {
   char volume_cstr[100];
@@ -20,7 +8,7 @@ class Analyzer : Analyzer_base {
   LargeArray<uint64_t>* lastTimestamp_;
 
   LargeArray<uint64_t>* intervalHistogramByTime_;
-  LargeArray<uint64_t>* intervalHistogramByDataAmount_;
+//  LargeArray<uint64_t>* intervalHistogramByDataAmount_;
 
   uint64_t currentId_ = 1;
 
@@ -31,9 +19,9 @@ class Analyzer : Analyzer_base {
     return distance;
   }
 
-  uint64_t getTimeInMin(uint64_t off, uint64_t timestamp) {
+  uint64_t getTimeIn01Sec(uint64_t off, uint64_t timestamp) {
     uint64_t diff = timestamp - lastTimestamp_->get(off);
-    diff /= 10000000 * 60;
+    diff /= 1000000; // Unit: 0.1 s
     return diff;
   }
 
@@ -42,6 +30,8 @@ public:
   // initialize properties
   void init(char *propertyFileName, char *volume) {
     std::string volumeId(volume);
+    volumeId_ = volumeId;
+
     strcpy(volume_cstr, volume);
     trace_.loadProperty(propertyFileName, volume);
 
@@ -51,8 +41,9 @@ public:
     indexMap_ = new LargeArray<uint64_t>(nBlocks_);
     lastTimestamp_ = new LargeArray<uint64_t>(nBlocks_);
     // every 256 blocks in one bucket, in total maintain (maxLba / 4096 + 1) * 8
-    intervalHistogramByTime_ = new LargeArray<uint64_t>(31 * 24 * 60);
-    intervalHistogramByDataAmount_ = new LargeArray<uint64_t>(nBlocks_ * 8 / 256 + 1);
+
+    intervalHistogramByTime_ = new LargeArray<uint64_t>(31 * 24 * 36000);
+    // intervalHistogramByDataAmount_ = new LargeArray<uint64_t>(nBlocks_ * 8 / 256 + 1);
   }
 
   void analyze(char *inputTrace) {
@@ -77,12 +68,15 @@ public:
         if (isWrite) { // write request
           for (uint64_t i = 0; i < length; i += 1) {
             if (indexMap_->get(offset + i) != 0) {
-              intervalHistogramByDataAmount_->inc(getDistance(offset + i));
+//              intervalHistogramByDataAmount_->inc(getDistance(offset + i));
 
-              if (getTimeInMin(offset + i, timestamp) >= intervalHistogramByTime_->getSize()) {
+              uint64_t updateIntervalIn01Sec = getTimeIn01Sec(offset + i, timestamp);
+
+              if (updateIntervalIn01Sec >= intervalHistogramByTime_->getSize()) {
                 intervalHistogramByTime_->inc(intervalHistogramByTime_->getSize() - 1);
+              } else {
+                intervalHistogramByTime_->inc(updateIntervalIn01Sec);
               }
-              intervalHistogramByTime_->inc(getTimeInMin(offset + i, timestamp));
             }
 
             lastTimestamp_->put(offset + i, timestamp);
@@ -94,7 +88,7 @@ public:
       }
 
       intervalHistogramByTime_->outputNonZero();
-      intervalHistogramByDataAmount_->outputNonZero();
+//      intervalHistogramByDataAmount_->outputNonZero();
   }
 };
 

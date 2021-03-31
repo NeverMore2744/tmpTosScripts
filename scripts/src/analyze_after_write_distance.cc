@@ -1,16 +1,5 @@
-#include <iostream>
-#include <unordered_map>
-#include <string>
-#include <cstdint>
-#include <map>
-#include <cstdio>
-#include <vector>
-#include <set>
-#include <algorithm>
 #include "large_array.h"
 #include "trace.h"
-#include <string>
-#include <sys/time.h>
 
 class Analyzer : Analyzer_base {
   LargeArray<uint64_t>* indexMap_;
@@ -60,11 +49,11 @@ public:
     lastState_ = new LargeArray<char>(nBlocks_);
 
     // every 256 blocks in one bucket, in total maintain (maxLba / 4096 + 1) * 8
-    waw_.intervalHistogramByTime_ = new LargeArray<uint64_t>(9 * 24 * 3600);
+    waw_.intervalHistogramByTime_ = new LargeArray<uint64_t>(31 * 24 * 3600);
 //    waw_.intervalHistogramByDataAmount_ = new LargeArray<uint64_t>(nBlocks_ * 8 / 256 + 1);
 
     // every 256 blocks in one bucket, in total maintain (maxLba / 4096 + 1) * 8
-    raw_.intervalHistogramByTime_ = new LargeArray<uint64_t>(9 * 24 * 3600);
+    raw_.intervalHistogramByTime_ = new LargeArray<uint64_t>(31 * 24 * 3600);
 //    raw_.intervalHistogramByDataAmount_ = new LargeArray<uint64_t>(nBlocks_ * 8 / 256 + 1);
   }
 
