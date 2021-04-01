@@ -25,6 +25,16 @@ class Trace {
   uint64_t totReadBytes_ = 0;
 
   public:
+#if defined(ALICLOUD) // || defined(TENCENTCLOUD)
+  uint64_t timeZoneOffset_ = 0;  // use Unix time (but in microseconds), starts from 0 AM GMT+8
+#elif defined(TENCENTCLOUD) 
+  uint64_t timeZoneOffset_ = 23; // use Unix time, starts from 5 PM GMT+0, or 1 AM GMT+8
+#elif defined(MSRC)
+  uint64_t timeZoneOffset_ = 15; // use FILETIME, starts from 5 PM GMT+0, or 9 AM GMT-8
+#else
+  uint64_t timeZoneOffset_ = 0;
+#endif
+
   void loadProperty(char *propertyFile, const char* selectedVolume) {
     FILE *f = nullptr; 
     uint64_t uniqueLba, maxLba;
@@ -81,7 +91,7 @@ class Trace {
     totReadBytes_ += line_.length() + 1;
 
 #ifdef TENCENTCLOUD
-    uint64_t beginTimestampInSec = 1538326799llu; // Minimum timestamp in Tencent 
+    uint64_t beginTimestampInSec = 1538326799llu; // Minimum timestamp in Tencent, 16:59:59 UTC 30/9/2018
 
     int pos = strlen(line_cstr) - 1;
     for ( ; pos >= 0 && line_cstr[pos] != ','; pos--); pos++; 
@@ -130,7 +140,7 @@ class Trace {
     return 1;
 
 #elif MSRC 
-    uint64_t beginTimestampIn100ns = 128166372000000000llu; // Minimum timestamp in MSR 
+    uint64_t beginTimestampIn100ns = 128166372000000000llu; // Minimum timestamp in MSRC 
     char volume[100], typeStr[4];
     uint64_t volumeNum, latency;
 
