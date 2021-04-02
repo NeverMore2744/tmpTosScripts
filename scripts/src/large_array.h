@@ -77,6 +77,20 @@ class LargeArray {
       }
     }
 
+    void outputNonZeroToFile(FILE* fout, bool specify_rows = true) {
+      uint64_t num = 0;
+      for (uint64_t i = 0; i < size_; ++i) {
+        if (get(i)) ++num;
+      }
+
+      if (specify_rows) fprintf(fout, "%lu\n", num);
+      for (uint64_t i = 0; i < size_; ++i) {
+        if (get(i)) {
+          fprintf(fout, "%lu %lu\n", i, get(i));
+        }
+      }
+    }
+
     uint64_t getSize() {
       return size_;
     }
