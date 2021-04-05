@@ -34,7 +34,7 @@ public:
       for (int j = 0; j < intervalHistograms_[i]->getSize(); j++) {
         uint64_t diffCnt = intervalHistograms_[i]->get(j);
         cnt += diffCnt;
-        while (intt_num / 100 * pct <= cnt) {
+        while (pct <= 100 &&intt_num / 100 * pct <= cnt) {
           uint64_t timeIn100ns = j;
           if (i == 1) timeIn100ns *= 10;
           else if (i == 2) timeIn100ns *= 1000;

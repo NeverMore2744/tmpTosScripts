@@ -45,5 +45,6 @@ public:
 
 int main(int argc, char *argv[]) {
   Analyzer analyzer;
+  analyzer.init(argv[3], argv[1]);
   analyzer.analyze(argv[2], argv[1]);
 }

@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <vector>
 #include <map>
-
+#include "large_array.h"
 #include "processor.h"
 
 int d[10] = {1, 10, 100, 1000, 10000, 100000, 1000000};
@@ -15,6 +15,11 @@ int dt[10] = {1, 60, 600, 6000, 60000, 600000, 6000000, 60000000};
 int cpt[10] = {600, 6000, 60000, 600000, 6000000, 60000000, 600000000, 999999999};
 
 class Processor : Processor_base {
+  FILE* fin, *fout, *fout2, *fout3, *fout4; 
+  LargeArray<uint64_t> *udCount_;
+  LargeArray<uint64_t> *singleTimeIn100ms_;
+  LargeArray<uint64_t> *singleRwarwCount_;
+
   public:
     std::vector<uint64_t> pcts(std::vector<uint64_t>& times, std::vector<uint64_t>& cnts, uint64_t sum_cnts) {
       std::vector<uint64_t> rets;
@@ -32,8 +37,7 @@ class Processor : Processor_base {
       return rets;
     }
 
-    void takeSecond(FILE* fin, FILE* fout, FILE* fout2, const char* logname, 
-        uint64_t rows, std::map<uint64_t, uint64_t>& data2cnt, uint64_t& globalSumCnt) {
+    void takeSecond(uint64_t rows, std::map<uint64_t, uint64_t>& data2cnt, uint64_t& globalSumCnt) {
       char* retChar;
       char s[200];
       uint64_t timeSecond, tmpTimes, times;
@@ -44,6 +48,7 @@ class Processor : Processor_base {
       std::vector<uint64_t> timeVector;
       std::vector<uint64_t> cntVector;
       uint64_t sum_cnts = 0;
+      uint64_t raw_sum_cnts = 0;
 
       uint64_t lastTimeSecond = -1;
 
@@ -52,6 +57,11 @@ class Processor : Processor_base {
         if (retChar == NULL) break;
         ret = sscanf(s, "%lu %lu", &timeSecond, &tmpTimes);
         assert(ret == 2);
+        `
+        udCount_->incValue(timeSecond, tmpTimes);
+        singleTimeIn100ms_->put(outi, timeSecond);
+        singleRwarwCount_->put(outi, tmpTimes);
+        raw_sum_cnts += tmpTimes;
 
         for (int i = lastTimeSecond + 1; i <= timeSecond; i++) {
           times = 0;
@@ -59,19 +69,19 @@ class Processor : Processor_base {
 
           // fout output
           if (outi == rows - 1 && i == timeSecond) {
-            fprintf(fout, "%s %d %lu\n", logname, i, cumu);
+            fprintf(fout, "%s %d %lu\n", volumeId_.c_str(), i, cumu);
           } else if (i == cpt[index] || (i - lastDis) % dt[index] == 0) {
             if (cumu == 0) {
               if (!zeros) {
-                fprintf(fout, "%s %d 0\n", logname, i);
+                fprintf(fout, "%s %d 0\n", volumeId_.c_str(), i);
                 zeros = 1;
                 lastZeroIndex = i;
               }
             } else {
               if (zeros && lastZeroIndex < i - dt[index]) {
-                fprintf(fout, "%s %d 0\n", logname, i - dt[index]);
+                fprintf(fout, "%s %d 0\n", volumeId_.c_str(), i - dt[index]);
               }
-              fprintf(fout, "%s %d %lu\n", logname, i, cumu);
+              fprintf(fout, "%s %d %lu\n", volumeId_.c_str(), i, cumu);
               zeros = 0;
             }
             lastDis = i; cumu = 0;
@@ -97,45 +107,34 @@ class Processor : Processor_base {
         lastTimeSecond = timeSecond;
       }
 
+      summary();
+
       std::vector<uint64_t> rets = pcts(timeVector, cntVector, sum_cnts);
 
       int i = 1;
       for (auto& it : rets) {
-        fprintf(fout2, "%s %lu %.2lf\n", logname, it, (double)i / 100);
+        fprintf(fout2, "%s %lu %.2lf\n", volumeId_.c_str(), it, (double)i / 100);
         i++;
       }
+
+      udCount_->outputNonZeroToFile(fout4, false);
+    }
+
+    void summary() {
+      
     }
 
     void analyze(const char* file_prefix, const char* volume_file) {
-      filenames_.push_back("raw_time.data");
-      filenames_.push_back("waw_time.data");
-      filenames_.push_back("raw_time_pcts.data");
-      filenames_.push_back("waw_time_pcts.data");
-      filenames_.push_back("raw_time_global_pct.data");
-      filenames_.push_back("waw_time_global_pct.data");
-      FILE* fout = fopen(filenames_[0].c_str(), "w");
-      FILE* fout3 = fopen(filenames_[1].c_str(), "w");
-      FILE* fout1_2 = fopen(filenames_[2].c_str(), "w");
-      FILE* fout3_2 = fopen(filenames_[3].c_str(), "w");
-      FILE* fout1g = fopen(filenames_[4].c_str(), "w");
-      FILE* fout3g = fopen(filenames_[5].c_str(), "w");
-
-      fprintf(fout, "log timeInSec cnts\n"); 
-      fprintf(fout3, "log timeInSec cnts\n");
-      fprintf(fout1_2, "log timeInSec pct\n"); 
-      fprintf(fout3_2, "log timeInSec pct\n");
-      fprintf(fout1g, "timeInSec pct\n");
-      fprintf(fout3g, "timeInSec pct\n");
-
       int index = 0;
       char filename[200], s[200];
       uint64_t cumu = 0;
-      std::map<uint64_t, uint64_t> waw2cnt;
-      std::map<uint64_t, uint64_t> raw2cnt;
-      uint64_t globalWarCnts = 0, globalRarCnts = 0;
+      std::map<uint64_t, uint64_t> rwarw2cnt;
+      uint64_t globalRwarwCnts = 0;
+      char prefices[4][10] = {"rar", "war", "raw", "waw"};
+      char fn_time[200], fn_time_pcts[200], fn_global_pct[200];
+      char fn_gcnt[200];
 
-      openVolumeFile(volume_file);
-
+      openVolumeFile(volume_file); 
       while (std::getline(is, volume)) {
         sprintf(filename, "%s/%s.data", file_prefix, volume.c_str());
 
@@ -146,60 +145,58 @@ class Processor : Processor_base {
         }
 
         std::cerr << "Processing " << volume << std::endl;
+        for (int prefices_i = 0; prefices_i < 4; prefices_i++) {
+          int filenames_index = filenames_.size();
+          sprintf(fn_time, "%s_time.data", prefices[prefices_i]);
+          sprintf(fn_time_pcts, "%s_time_pcts.data", prefices[prefices_i]);
+          sprintf(fn_global_pct, "%s_global_pct.data", prefices[prefices_i]);
+          sprintf(fn_gcnt, "%s_gcnt.data", prefices[prefices_i]);
 
-        uint64_t rows;
+          filenames_.push_back(fn_time);
+          filenames_.push_back(fn_time_pcts);
+          filenames_.push_back(fn_global_pct);
+          filenames_.push_back(fn_gcnt);
+          fout = fopen(filenames_[filenames_index].c_str(), "w");
+          fout2 = fopen(filenames_[filenames_index + 1].c_str(), "w");
+          fout3 = fopen(filenames_[filenames_index + 2].c_str(), "w");
+          fout4 = fopen(filenames_[filenames_index + 3].c_str(), "w");
 
-        // fout1: raw time
-        char* retChar = fgets(s, 200, fin);
-        if (retChar == nullptr) {
-          std::cerr << "Empty file\n";
+          uint64_t rows;
+
+          // fout1: raw time
+          char* retChar = fgets(s, 200, fin);
+          if (retChar == nullptr) {
+            std::cerr << "Empty file\n";
+          }
+          sscanf(s, "%lu", &rows);
+          singleUdCount_ = new LargeArray<uint64_t>(rows);
+          singleTimeIn100ms_ = new LargeArray<uint64_t>(rows);
+
+          takeSecond(rows, rwarw2cnt, globalRwarwCnts);
+
+          fclose(fout);
+          fclose(fout2);
+          fclose(fout3);
+          fclose(fout4);
         }
-        sscanf(s, "%lu", &rows);
-        takeSecond(fin, fout, fout1_2, volume.c_str(), rows, waw2cnt, globalWarCnts);
-
-        // fout3: waw time
-        fgets(s, 200, fin);
-        sscanf(s, "%lu", &rows);
-        takeSecond(fin, fout3, fout3_2, volume.c_str(), rows, raw2cnt, globalRarCnts);
-
         fclose(fin);
       }
-
-      fclose(fout);
-      fclose(fout3);
-      fclose(fout1_2);
-      fclose(fout3_2);
 
       std::vector<uint64_t> retVec;
       std::vector<uint64_t> d1, d2;
 
-      {
-        for (auto& it : waw2cnt) {
-          d1.push_back(it.first);
-          d2.push_back(it.second);
-        }
-        retVec = pcts(d1, d2, globalWarCnts);
-        int j = 1;
-        for (auto& it : retVec) {
-          fprintf(fout1g, "%lu %.2lf\n", it, (double)j / 100);
-          j++;
-        }
-
-        d1.clear(); d2.clear();
-        for (auto& it : raw2cnt) {
-          d1.push_back(it.first);
-          d2.push_back(it.second);
-        }
-        retVec = pcts(d1, d2, globalRarCnts);
-        int j = 1;
-        for (auto& it : retVec) {
-          fprintf(fout3g, "%lu %.2lf\n", it, (double)j / 100);
-          j++;
-        }
+      for (auto& it : rwarw2cnt) {
+        d1.push_back(it.first);
+        d2.push_back(it.second);
+      }
+      retVec = pcts(d1, d2, globalRwarwCnts);
+      int j = 1;
+      for (auto& it : retVec) {
+        fprintf(fout1g, "%lu %.2lf\n", it, (double)j / 100);
+        j++;
       }
 
       fclose(fout1g);
-      fclose(fout3g);
 
       outputFileNames();
     }
